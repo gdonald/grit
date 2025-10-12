@@ -1,0 +1,10 @@
+[package]
+name = "grit"
+version = "0.1.0"
+edition = "2021"
+authors = ["Greg Donald"]
+description = "Grit - Generated Rust Intermediate Translation: A scripting language that transpiles to Rust"
+
+[dependencies]
+
+[dev-dependencies]
