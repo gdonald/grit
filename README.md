@@ -108,7 +108,7 @@ The project uses GitHub Actions for continuous integration. On every push and pu
 - Run linting with `clippy`
 - Build the project
 - Run all tests
-- Generate code coverage reports
+- Generate and upload code coverage reports to Codecov
 
 To ensure your code passes CI checks before pushing:
 
