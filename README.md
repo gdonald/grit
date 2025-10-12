@@ -1,5 +1,7 @@
 # Grit - Generated Rust Intermediate Translation
 
+![CI](https://github.com/gdonald/grit/workflows/CI/badge.svg)
+
 A scripting language that transpiles to Rust source code, which then compiles to a Rust binary.
 
 ## Features
@@ -26,6 +28,9 @@ grit/
 │   └── position_tests.rs  # Position tracking tests
 ├── examples/             # Example Grit programs
 │   └── simple.grit       # Simple arithmetic example
+├── .github/
+│   └── workflows/
+│       └── ci.yml        # GitHub Actions CI workflow
 ├── Cargo.toml            # Rust package manifest
 └── README.md             # This file
 ```
@@ -94,9 +99,29 @@ Tokens:
   Token { token_type: Eof, line: 1, column: 26 }
 ```
 
+## Continuous Integration
+
+The project uses GitHub Actions for continuous integration. On every push and pull request to the `main` branch, the workflow will:
+
+- Run on Ubuntu with stable Rust
+- Check code formatting with `rustfmt`
+- Run linting with `clippy`
+- Build the project
+- Run all tests
+- Generate code coverage reports
+
+To ensure your code passes CI checks before pushing:
+
+```bash
+cargo fmt -- --check    # Check formatting
+cargo clippy -- -D warnings  # Run linter
+cargo test              # Run all tests
+```
+
 ## Development Roadmap
 
 - [x] Tokenizer with integers, operators, and parentheses
+- [x] GitHub Actions CI workflow
 - [ ] Parser for building an Abstract Syntax Tree (AST)
 - [ ] AST to Rust code generator
 - [ ] Support for variables

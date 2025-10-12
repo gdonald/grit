@@ -97,7 +97,10 @@ impl Tokenizer {
                         '(' => TokenType::LeftParen,
                         ')' => TokenType::RightParen,
                         _ => {
-                            panic!("Unexpected character '{}' at line {}, column {}", ch, line, column)
+                            panic!(
+                                "Unexpected character '{}' at line {}, column {}",
+                                ch, line, column
+                            )
                         }
                     };
                     Token::new(token_type, line, column)
