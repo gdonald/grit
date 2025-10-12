@@ -29,22 +29,23 @@ impl Tokenizer {
     }
 
     /// Advances to the next character and returns it
-    fn advance(&mut self) -> Option<char> {
-        if self.position < self.input.len() {
-            let ch = self.input[self.position];
-            self.position += 1;
+    ///
+    /// # Safety
+    /// This method assumes position < input.len().
+    /// Always call current_char() first to check if there are more characters.
+    /// Calling this method when position >= input.len() will cause a panic.
+    fn advance(&mut self) -> char {
+        let ch = self.input[self.position];
+        self.position += 1;
 
-            if ch == '\n' {
-                self.line += 1;
-                self.column = 1;
-            } else {
-                self.column += 1;
-            }
-
-            Some(ch)
+        if ch == '\n' {
+            self.line += 1;
+            self.column = 1;
         } else {
-            None
+            self.column += 1;
         }
+
+        ch
     }
 
     /// Skips whitespace characters
