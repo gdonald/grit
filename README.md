@@ -1,6 +1,6 @@
 # Grit - Generated Rust Intermediate Translation
 
-![CI](https://github.com/gdonald/grit/workflows/CI/badge.svg)
+![CI](https://github.com/gdonald/grit/workflows/CI/badge.svg) [![codecov](https://codecov.io/gh/gdonald/grit/graph/badge.svg?token=GQ4LA1VMRE)](https://codecov.io/gh/gdonald/grit)
 
 A scripting language that transpiles to Rust source code, which then compiles to a Rust binary.
 
