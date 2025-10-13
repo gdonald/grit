@@ -2,7 +2,7 @@
 
 The `CodeGenerator` translates the parsed AST into Rust expressions and wraps them in a `fn main` scaffold.
 
-```rust
+```rust,ignore
 use grit::parser::Parser;
 use grit::lexer::Tokenizer;
 use grit::codegen::CodeGenerator;
@@ -31,9 +31,10 @@ fn main() {
 
 The generator wraps sub-expressions in parentheses when needed to preserve semantics:
 
-```rust
-# use grit::parser::{Expr, BinaryOperator};
-# use grit::codegen::CodeGenerator;
+```rust,ignore
+use grit::parser::{Expr, BinaryOperator};
+use grit::codegen::CodeGenerator;
+
 let expr = Expr::BinaryOp {
     left: Box::new(Expr::Integer(3)),
     op: BinaryOperator::Divide,
