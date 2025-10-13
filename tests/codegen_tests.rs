@@ -1,5 +1,5 @@
-use grit::parser::{BinaryOperator, Expr, Program, Statement};
 use grit::codegen::CodeGenerator;
+use grit::parser::{BinaryOperator, Expr, Program, Statement};
 
 #[test]
 fn test_generate_assignment() {
@@ -95,10 +95,7 @@ fn test_generate_print_with_format_d() {
     let program = Program {
         statements: vec![Statement::Expression(Expr::FunctionCall {
             name: "print".to_string(),
-            args: vec![
-                Expr::String("value: %d".to_string()),
-                Expr::Integer(42),
-            ],
+            args: vec![Expr::String("value: %d".to_string()), Expr::Integer(42)],
         })],
     };
 
@@ -165,7 +162,9 @@ fn test_generate_string_expression() {
     };
 
     let code = CodeGenerator::generate_program(&program);
-    assert!(code.contains("let msg = \"hello world\";") || code.contains("let msg = 'hello world';"));
+    assert!(
+        code.contains("let msg = \"hello world\";") || code.contains("let msg = 'hello world';")
+    );
 }
 
 #[test]

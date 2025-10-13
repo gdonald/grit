@@ -71,10 +71,7 @@ impl CodeGenerator {
         };
 
         // Remaining arguments are the values
-        let values: Vec<String> = args[1..]
-            .iter()
-            .map(|arg| Self::generate_expression(arg))
-            .collect();
+        let values: Vec<String> = args[1..].iter().map(Self::generate_expression).collect();
 
         if values.is_empty() {
             format!("println!(\"{}\");", format_str)
@@ -105,7 +102,7 @@ impl CodeGenerator {
 
                 let expression = format!("{} {} {}", left_str, Self::op_symbol(op), right_str);
 
-                let needs_parens = parent_precedence.map_or(false, |parent| {
+                let needs_parens = parent_precedence.is_some_and(|parent| {
                     precedence < parent || (precedence == parent && is_right_child)
                 });
 

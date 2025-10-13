@@ -6,7 +6,10 @@ fn test_tokenize_identifier() {
     let tokens = tokenizer.tokenize();
 
     assert_eq!(tokens.len(), 2);
-    assert_eq!(tokens[0].token_type, TokenType::Identifier("abc".to_string()));
+    assert_eq!(
+        tokens[0].token_type,
+        TokenType::Identifier("abc".to_string())
+    );
     assert_eq!(tokens[1].token_type, TokenType::Eof);
 }
 
@@ -16,7 +19,10 @@ fn test_tokenize_identifier_with_underscore() {
     let tokens = tokenizer.tokenize();
 
     assert_eq!(tokens.len(), 2);
-    assert_eq!(tokens[0].token_type, TokenType::Identifier("my_var".to_string()));
+    assert_eq!(
+        tokens[0].token_type,
+        TokenType::Identifier("my_var".to_string())
+    );
     assert_eq!(tokens[1].token_type, TokenType::Eof);
 }
 
@@ -26,7 +32,10 @@ fn test_tokenize_identifier_with_numbers() {
     let tokens = tokenizer.tokenize();
 
     assert_eq!(tokens.len(), 2);
-    assert_eq!(tokens[0].token_type, TokenType::Identifier("var123".to_string()));
+    assert_eq!(
+        tokens[0].token_type,
+        TokenType::Identifier("var123".to_string())
+    );
     assert_eq!(tokens[1].token_type, TokenType::Eof);
 }
 
@@ -46,7 +55,10 @@ fn test_tokenize_string_with_escape_sequences() {
     let tokens = tokenizer.tokenize();
 
     assert_eq!(tokens.len(), 2);
-    assert_eq!(tokens[0].token_type, TokenType::String("hello\nworld".to_string()));
+    assert_eq!(
+        tokens[0].token_type,
+        TokenType::String("hello\nworld".to_string())
+    );
     assert_eq!(tokens[1].token_type, TokenType::Eof);
 }
 
@@ -138,7 +150,10 @@ fn test_tokenize_function_call() {
     let tokens = tokenizer.tokenize();
 
     assert_eq!(tokens.len(), 7);
-    assert_eq!(tokens[0].token_type, TokenType::Identifier("print".to_string()));
+    assert_eq!(
+        tokens[0].token_type,
+        TokenType::Identifier("print".to_string())
+    );
     assert_eq!(tokens[1].token_type, TokenType::LeftParen);
     assert_eq!(tokens[2].token_type, TokenType::String("hello".to_string()));
     assert_eq!(tokens[3].token_type, TokenType::Comma);
@@ -163,5 +178,8 @@ fn test_tokenize_multiline_program() {
     assert_eq!(tokens[7].token_type, TokenType::Newline);
     assert_eq!(tokens[8].token_type, TokenType::Identifier("c".to_string()));
     assert_eq!(tokens[9].token_type, TokenType::Equals);
-    assert_eq!(tokens[10].token_type, TokenType::Identifier("a".to_string()));
+    assert_eq!(
+        tokens[10].token_type,
+        TokenType::Identifier("a".to_string())
+    );
 }
