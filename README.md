@@ -268,6 +268,24 @@ cargo clippy -- -D warnings  # Run linter
 cargo test              # Run all tests
 ```
 
+## Documentation
+
+The project documentation is generated with [mdBook](https://rust-lang.github.io/mdBook/).
+
+Build locally:
+
+```bash
+mdbook build book
+```
+
+Serve with live reload:
+
+```bash
+mdbook serve book --open
+```
+
+Continuous integration builds the book on every push to `main` and publishes the HTML to GitHub Pages (branch `gh-pages`).
+
 ## Development Roadmap
 
 - [x] Tokenizer with integers, operators, and parentheses

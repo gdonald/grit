@@ -1,0 +1,14 @@
+[book]
+title = "Grit Language Guide"
+authors = ["Grit Project Contributors"]
+language = "en"
+multilingual = false
+src = "src"
+
+[build]
+build-dir = "book"
+
+[output.html]
+default-theme = "light"
+preferred-dark-theme = "navy"
+git-repository-url = "https://github.com/gdonald/grit"
