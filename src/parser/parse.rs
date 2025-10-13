@@ -209,7 +209,10 @@ mod tests {
             Token::new(TokenType::Eof, 1, 3),
         ];
         let parser = Parser::new(tokens);
-        assert_eq!(parser.current_token().unwrap().token_type, TokenType::Integer(42));
+        assert_eq!(
+            parser.current_token().unwrap().token_type,
+            TokenType::Integer(42)
+        );
     }
 
     #[test]
@@ -220,7 +223,10 @@ mod tests {
             Token::new(TokenType::Eof, 1, 5),
         ];
         let mut parser = Parser::new(tokens);
-        assert_eq!(parser.current_token().unwrap().token_type, TokenType::Integer(1));
+        assert_eq!(
+            parser.current_token().unwrap().token_type,
+            TokenType::Integer(1)
+        );
         parser.advance();
         assert_eq!(parser.current_token().unwrap().token_type, TokenType::Plus);
         parser.advance();
@@ -314,7 +320,7 @@ mod tests {
         let tokens = vec![
             Token::new(TokenType::LeftParen, 1, 1),
             Token::new(TokenType::Integer(42), 1, 2),
-            Token::new(TokenType::Integer(43), 1, 4),  // Wrong token instead of ')'
+            Token::new(TokenType::Integer(43), 1, 4), // Wrong token instead of ')'
             Token::new(TokenType::Eof, 1, 5),
         ];
         let mut parser = Parser::new(tokens);
