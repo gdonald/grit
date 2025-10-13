@@ -7,9 +7,14 @@ A scripting language that transpiles to Rust source code, which then compiles to
 ## Features
 
 Currently, Grit supports:
-- Integer literals
-- Arithmetic operators: `+`, `-`, `*`, `/`
-- Parentheses for grouping expressions
+- **Tokenization**: Lexical analysis of source code
+  - Integer literals
+  - Arithmetic operators: `+`, `-`, `*`, `/`
+  - Parentheses for grouping expressions
+- **Parsing**: Building Abstract Syntax Trees (AST)
+  - Operator precedence (multiplication/division before addition/subtraction)
+  - Left-to-right associativity
+  - Parentheses for overriding precedence
 
 ## Project Structure
 
@@ -18,10 +23,14 @@ grit/
 ├── src/
 │   ├── main.rs           # CLI entry point
 │   ├── lib.rs            # Library root
-│   └── lexer/            # Lexical analysis (tokenization)
-│       ├── mod.rs        # Lexer module
-│       ├── token.rs      # Token types and definitions
-│       └── tokenizer.rs  # Tokenizer implementation
+│   ├── lexer/            # Lexical analysis (tokenization)
+│   │   ├── mod.rs        # Lexer module
+│   │   ├── token.rs      # Token types and definitions
+│   │   └── tokenizer.rs  # Tokenizer implementation
+│   └── parser/           # Syntax analysis (parsing)
+│       ├── mod.rs        # Parser module
+│       ├── ast.rs        # Abstract Syntax Tree node definitions
+│       └── parse.rs      # Parser implementation (precedence climbing)
 ├── tests/                # Integration tests (separate from implementation)
 │   ├── tokenizer_tests.rs      # Tokenizer functionality tests
 │   ├── token_tests.rs          # Token type tests
@@ -29,6 +38,7 @@ grit/
 │   ├── error_handling_tests.rs # Error handling tests
 │   ├── edge_case_tests.rs      # Edge cases and boundary conditions
 │   ├── next_token_tests.rs     # Direct next_token() method tests
+│   ├── parser_tests.rs         # Parser and AST tests
 │   └── cli_tests.rs            # CLI integration tests
 ├── examples/             # Example Grit programs
 │   └── simple.grit       # Simple arithmetic example
@@ -62,10 +72,11 @@ cargo test --test position_tests       # Position tracking (3 tests)
 cargo test --test error_handling_tests # Error handling (8 tests)
 cargo test --test edge_case_tests      # Edge cases and boundary conditions (7 tests)
 cargo test --test next_token_tests     # Direct next_token() calls (12 tests)
+cargo test --test parser_tests         # Parser and AST (17 tests)
 cargo test --test cli_tests            # CLI integration (8 tests)
 ```
 
-**Total: 59 tests** covering tokenization, error handling, edge cases, boundary conditions, CLI functionality, and main.rs unit tests.
+**Total: 76 tests** covering tokenization, parsing, AST, error handling, edge cases, and CLI functionality.
 
 ### Running Code Coverage Locally
 
@@ -130,7 +141,7 @@ The difference between tarpaulin's 89.33% and actual ~97% is due to instrumentat
 cargo run -- examples/simple.grit
 ```
 
-This will tokenize the input file and display the tokens.
+This will tokenize and parse the input file, displaying both tokens and the Abstract Syntax Tree.
 
 ## Example
 
@@ -140,7 +151,7 @@ Given a file `examples/simple.grit`:
 (10 + 20) * (30 - 15) / 5
 ```
 
-Running the tokenizer:
+Running the compiler:
 
 ```bash
 cargo run -- examples/simple.grit
@@ -163,8 +174,24 @@ Tokens:
   Token { token_type: RightParen, line: 1, column: 21 }
   Token { token_type: Divide, line: 1, column: 23 }
   Token { token_type: Integer(5), line: 1, column: 25 }
-  Token { token_type: Eof, line: 1, column: 26 }
+  Token { token_type: Eof, line: 2, column: 1 }
+
+AST:
+  ((((10 + 20)) * ((30 - 15))) / 5)
+
+Debug AST:
+  BinaryOp {
+    left: BinaryOp {
+      left: Grouped(BinaryOp { left: Integer(10), op: Add, right: Integer(20) }),
+      op: Multiply,
+      right: Grouped(BinaryOp { left: Integer(30), op: Subtract, right: Integer(15) })
+    },
+    op: Divide,
+    right: Integer(5)
+  }
 ```
+
+The AST correctly represents the expression with proper precedence and grouping!
 
 ## Continuous Integration
 
@@ -189,7 +216,11 @@ cargo test              # Run all tests
 
 - [x] Tokenizer with integers, operators, and parentheses
 - [x] GitHub Actions CI workflow
-- [ ] Parser for building an Abstract Syntax Tree (AST)
+- [x] Parser for building an Abstract Syntax Tree (AST)
+  - [x] Operator precedence (multiplication/division before addition/subtraction)
+  - [x] Left-to-right associativity
+  - [x] Parentheses support for expression grouping
+  - [x] Comprehensive error handling and reporting
 - [ ] AST to Rust code generator
 - [ ] Support for variables
 - [ ] Support for functions
