@@ -15,6 +15,9 @@ Currently, Grit supports:
   - Operator precedence (multiplication/division before addition/subtraction)
   - Left-to-right associativity
   - Parentheses for overriding precedence
+- **Code Generation**: Translating ASTs into Rust source code
+  - Precedence-aware expression rendering
+  - Emits runnable `fn main` scaffolding that evaluates and prints the result
 
 ## Project Structure
 
@@ -221,7 +224,7 @@ cargo test              # Run all tests
   - [x] Left-to-right associativity
   - [x] Parentheses support for expression grouping
   - [x] Comprehensive error handling and reporting
-- [ ] AST to Rust code generator
+- [x] AST to Rust code generator
 - [ ] Support for variables
 - [ ] Support for functions
 - [ ] Support for control flow (if/else, loops)
@@ -231,4 +234,3 @@ cargo test              # Run all tests
 ## License
 
 [MIT](https://github.com/gdonald/grit/blob/main/LICENSE)
-

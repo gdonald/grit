@@ -132,6 +132,9 @@ fn test_run_with_ast_output() {
     assert!(output_str.contains("AST:"));
     assert!(output_str.contains("Debug AST:"));
     assert!(output_str.contains("BinaryOp"));
+    assert!(output_str.contains("Generated Rust code:"));
+    assert!(output_str.contains("fn main() {"));
+    assert!(output_str.contains("println!(\"{}\", result);"));
 
     // Cleanup
     let _ = fs::remove_file(test_file);
@@ -153,6 +156,43 @@ fn test_run_empty_input_message() {
 
     let output_str = String::from_utf8(output).unwrap();
     assert!(output_str.contains("Empty input - nothing to parse"));
+    assert!(!output_str.contains("Generated Rust code"));
+
+    // Cleanup
+    let _ = fs::remove_file(test_file);
+}
+
+#[test]
+fn test_run_generated_rust_program_structure_integration() {
+    use std::io::Write;
+
+    let test_file = "/tmp/test_run_program_structure_integration.grit";
+    let mut file = fs::File::create(test_file).unwrap();
+    file.write_all(b"3 / (1 + 2)").unwrap();
+
+    let args = vec!["grit".to_string(), test_file.to_string()];
+    let mut output = Vec::new();
+
+    let result = grit::run(&args, &mut output);
+    assert!(result.is_ok());
+
+    let output_str = String::from_utf8(output).unwrap();
+    let lines: Vec<&str> = output_str.lines().collect();
+    let generated_index = lines
+        .iter()
+        .position(|line| line.trim() == "Generated Rust code:")
+        .expect("Generated Rust code header missing");
+
+    assert_eq!(lines[generated_index + 1], "  fn main() {");
+    assert_eq!(
+        lines[generated_index + 2],
+        "      let result = 3 / (1 + 2);"
+    );
+    assert_eq!(
+        lines[generated_index + 3],
+        "      println!(\"{}\", result);"
+    );
+    assert_eq!(lines[generated_index + 4], "  }");
 
     // Cleanup
     let _ = fs::remove_file(test_file);

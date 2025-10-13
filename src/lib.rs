@@ -1,6 +1,8 @@
+pub mod codegen;
 pub mod lexer;
 pub mod parser;
 
+use codegen::CodeGenerator;
 use lexer::Tokenizer;
 use parser::Parser;
 use std::fs;
@@ -42,6 +44,12 @@ pub fn run<W: Write>(args: &[String], output: &mut W) -> Result<(), i32> {
                 writeln!(output).unwrap();
                 writeln!(output, "Debug AST:").unwrap();
                 writeln!(output, "  {:?}", ast).unwrap();
+                let program = CodeGenerator::generate_program(&ast);
+                writeln!(output).unwrap();
+                writeln!(output, "Generated Rust code:").unwrap();
+                for line in program.trim_end().lines() {
+                    writeln!(output, "  {}", line).unwrap();
+                }
             }
             Err(err) => {
                 eprintln!("Parse error: {}", err);
@@ -210,6 +218,43 @@ mod tests {
 
         let output_str = String::from_utf8(output).unwrap();
         assert!(output_str.contains("Empty input - nothing to parse"));
+        assert!(!output_str.contains("Generated Rust code"));
+
+        // Cleanup
+        let _ = fs::remove_file(test_file);
+    }
+
+    #[test]
+    fn test_run_generated_rust_program_structure() {
+        use std::io::Write;
+
+        let test_file = "/tmp/test_run_program_structure_lib.grit";
+        let mut file = fs::File::create(test_file).unwrap();
+        file.write_all(b"3 / (1 + 2)").unwrap();
+
+        let args = vec!["grit".to_string(), test_file.to_string()];
+        let mut output = Vec::new();
+
+        let result = run(&args, &mut output);
+        assert!(result.is_ok());
+
+        let output_str = String::from_utf8(output).unwrap();
+        let lines: Vec<&str> = output_str.lines().collect();
+        let generated_index = lines
+            .iter()
+            .position(|line| line.trim() == "Generated Rust code:")
+            .expect("Generated Rust code header missing");
+
+        assert_eq!(lines[generated_index + 1], "  fn main() {");
+        assert_eq!(
+            lines[generated_index + 2],
+            "      let result = 3 / (1 + 2);"
+        );
+        assert_eq!(
+            lines[generated_index + 3],
+            "      println!(\"{}\", result);"
+        );
+        assert_eq!(lines[generated_index + 4], "  }");
 
         // Cleanup
         let _ = fs::remove_file(test_file);

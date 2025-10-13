@@ -68,6 +68,9 @@ fn test_cli_simple_expression() {
     assert!(stdout.contains("Plus"));
     assert!(stdout.contains("Integer(2)"));
     assert!(stdout.contains("Eof"));
+    assert!(stdout.contains("Generated Rust code:"));
+    assert!(stdout.contains("fn main() {"));
+    assert!(stdout.contains("println!(\"{}\", result);"));
 }
 
 #[test]
@@ -92,6 +95,9 @@ fn test_cli_complex_expression() {
     assert!(stdout.contains("RightParen"));
     assert!(stdout.contains("Multiply"));
     assert!(stdout.contains("Integer(3)"));
+    assert!(stdout.contains("Generated Rust code:"));
+    assert!(stdout.contains("fn main() {"));
+    assert!(stdout.contains("println!(\"{}\", result);"));
 }
 
 #[test]
