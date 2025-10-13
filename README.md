@@ -9,15 +9,24 @@ A scripting language that transpiles to Rust source code, which then compiles to
 Currently, Grit supports:
 - **Tokenization**: Lexical analysis of source code
   - Integer literals
+  - String literals (single-quoted)
+  - Identifiers
   - Arithmetic operators: `+`, `-`, `*`, `/`
+  - Assignment operator: `=`
   - Parentheses for grouping expressions
+  - Commas for function arguments
 - **Parsing**: Building Abstract Syntax Trees (AST)
+  - Variable assignments
+  - Variable references
+  - Function calls
   - Operator precedence (multiplication/division before addition/subtraction)
   - Left-to-right associativity
   - Parentheses for overriding precedence
-- **Code Generation**: Translating ASTs into Rust source code
-  - Precedence-aware expression rendering
-  - Emits runnable `fn main` scaffolding that evaluates and prints the result
+- **Code Generation**: Transpiling Grit ASTs into Rust source code
+  - Variable declarations (`let` statements)
+  - Expression statements
+  - `print()` function transpiles to `println!()` macro
+  - Format string conversion (`%d` → `{}`, `%s` → `{}`)
 
 ## Project Structure
 
@@ -30,21 +39,25 @@ grit/
 │   │   ├── mod.rs        # Lexer module
 │   │   ├── token.rs      # Token types and definitions
 │   │   └── tokenizer.rs  # Tokenizer implementation
-│   └── parser/           # Syntax analysis (parsing)
-│       ├── mod.rs        # Parser module
-│       ├── ast.rs        # Abstract Syntax Tree node definitions
-│       └── parse.rs      # Parser implementation (precedence climbing)
+│   ├── parser/           # Syntax analysis (parsing)
+│   │   ├── mod.rs        # Parser module
+│   │   ├── ast.rs        # Abstract Syntax Tree node definitions
+│   │   └── parse.rs      # Parser implementation (precedence climbing)
+│   └── codegen/          # Rust code generation (transpiler)
+│       └── mod.rs        # Code generator implementation
 ├── tests/                # Integration tests (separate from implementation)
-│   ├── tokenizer_tests.rs      # Tokenizer functionality tests
-│   ├── token_tests.rs          # Token type tests
-│   ├── position_tests.rs       # Position tracking tests
-│   ├── error_handling_tests.rs # Error handling tests
-│   ├── edge_case_tests.rs      # Edge cases and boundary conditions
-│   ├── next_token_tests.rs     # Direct next_token() method tests
-│   ├── parser_tests.rs         # Parser and AST tests
-│   └── cli_tests.rs            # CLI integration tests
+│   ├── tokenizer_tests.rs       # Tokenizer functionality tests
+│   ├── token_tests.rs           # Token type tests
+│   ├── position_tests.rs        # Position tracking tests
+│   ├── error_handling_tests.rs  # Error handling tests
+│   ├── edge_case_tests.rs       # Edge cases and boundary conditions
+│   ├── next_token_tests.rs      # Direct next_token() method tests
+│   ├── parser_tests.rs          # Parser and AST tests
+│   ├── cli_tests.rs             # CLI integration tests
+│   └── run_function_tests.rs    # Library run() function tests
 ├── examples/             # Example Grit programs
-│   └── simple.grit       # Simple arithmetic example
+│   ├── simple.grit       # Simple arithmetic example
+│   └── variables.grit    # Variable assignment and print() example
 ├── .github/
 │   └── workflows/
 │       └── ci.yml        # GitHub Actions CI workflow
@@ -77,9 +90,11 @@ cargo test --test edge_case_tests      # Edge cases and boundary conditions (7 t
 cargo test --test next_token_tests     # Direct next_token() calls (12 tests)
 cargo test --test parser_tests         # Parser and AST (17 tests)
 cargo test --test cli_tests            # CLI integration (8 tests)
+cargo test --test run_function_tests   # Library run() function (9 tests)
+cargo test --lib                       # Library unit tests (38 tests)
 ```
 
-**Total: 76 tests** covering tokenization, parsing, AST, error handling, edge cases, and CLI functionality.
+**Total: 118 tests** covering tokenization, parsing, AST, interpreter, error handling, edge cases, and CLI functionality.
 
 ### Running Code Coverage Locally
 
@@ -196,6 +211,44 @@ Debug AST:
 
 The AST correctly represents the expression with proper precedence and grouping!
 
+### Variables Example
+
+Given a file `examples/variables.grit`:
+
+```grit
+a = 1
+b = 2
+
+c = a + b
+
+print('c: %d', c)
+```
+
+Running the program:
+
+```bash
+cargo run -- examples/variables.grit
+```
+
+Output (generated Rust code):
+
+```rust
+fn main() {
+    let a = 1;
+    let b = 2;
+    let c = a + b;
+    println!("c: {}", c);
+}
+```
+
+The transpiler converts Grit code to valid Rust! You can compile and run the generated code:
+
+```bash
+# Save the generated code to a file and compile it
+rustc output.rs && ./output
+# Output: c: 3
+```
+
 ## Continuous Integration
 
 The project uses GitHub Actions for continuous integration. On every push and pull request to the `main` branch, the workflow will:
@@ -225,8 +278,13 @@ cargo test              # Run all tests
   - [x] Parentheses support for expression grouping
   - [x] Comprehensive error handling and reporting
 - [x] AST to Rust code generator
-- [ ] Support for variables
-- [ ] Support for functions
+- [x] Support for variables
+  - [x] Variable assignments (transpile to Rust `let` statements)
+  - [x] Variable references in expressions
+  - [x] String literals
+  - [x] Built-in `print()` function (transpiles to `println!()` macro)
+  - [x] Format string conversion (`%d` → `{}`, `%s` → `{}`)
+- [ ] Support for user-defined functions
 - [ ] Support for control flow (if/else, loops)
 - [ ] Type system
 - [ ] Standard library

@@ -49,8 +49,10 @@ fn test_only_whitespace() {
     let mut tokenizer = Tokenizer::new("   \n\t  ");
     let tokens = tokenizer.tokenize();
 
-    assert_eq!(tokens.len(), 1);
-    assert_eq!(tokens[0].token_type, grit::lexer::TokenType::Eof);
+    // Now includes newline token
+    assert_eq!(tokens.len(), 2);
+    assert_eq!(tokens[0].token_type, grit::lexer::TokenType::Newline);
+    assert_eq!(tokens[1].token_type, grit::lexer::TokenType::Eof);
 }
 
 #[test]
@@ -58,7 +60,9 @@ fn test_trailing_whitespace() {
     let mut tokenizer = Tokenizer::new("42   \n  ");
     let tokens = tokenizer.tokenize();
 
-    assert_eq!(tokens.len(), 2);
+    // Now includes newline token
+    assert_eq!(tokens.len(), 3);
     assert_eq!(tokens[0].token_type, grit::lexer::TokenType::Integer(42));
-    assert_eq!(tokens[1].token_type, grit::lexer::TokenType::Eof);
+    assert_eq!(tokens[1].token_type, grit::lexer::TokenType::Newline);
+    assert_eq!(tokens[2].token_type, grit::lexer::TokenType::Eof);
 }

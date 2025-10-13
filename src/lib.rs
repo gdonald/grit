@@ -38,16 +38,18 @@ pub fn run<W: Write>(args: &[String], output: &mut W) -> Result<(), i32> {
     } else {
         let mut parser = Parser::new(tokens);
         match parser.parse() {
-            Ok(ast) => {
+            Ok(program) => {
                 writeln!(output, "AST:").unwrap();
-                writeln!(output, "  {}", ast).unwrap();
+                writeln!(output, "  {}", program).unwrap();
                 writeln!(output).unwrap();
                 writeln!(output, "Debug AST:").unwrap();
-                writeln!(output, "  {:?}", ast).unwrap();
-                let program = CodeGenerator::generate_program(&ast);
+                writeln!(output, "  {:?}", program).unwrap();
                 writeln!(output).unwrap();
+
+                // Generate Rust code
+                let rust_code = CodeGenerator::generate_program(&program);
                 writeln!(output, "Generated Rust code:").unwrap();
-                for line in program.trim_end().lines() {
+                for line in rust_code.trim_end().lines() {
                     writeln!(output, "  {}", line).unwrap();
                 }
             }

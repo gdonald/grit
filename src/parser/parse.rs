@@ -1,4 +1,4 @@
-use super::ast::{BinaryOperator, Expr};
+use super::ast::{BinaryOperator, Expr, Program, Statement};
 use crate::lexer::{Token, TokenType};
 
 /// Parser for the Grit language
@@ -72,12 +72,80 @@ impl Parser {
         ) || self.current_token().is_none()
     }
 
-    /// Parses the tokens into an expression
-    pub fn parse(&mut self) -> ParseResult<Expr> {
+    /// Skips newline tokens
+    fn skip_newlines(&mut self) {
+        while let Some(token) = self.current_token() {
+            if token.token_type == TokenType::Newline {
+                self.advance();
+            } else {
+                break;
+            }
+        }
+    }
+
+    /// Parses the tokens into a program
+    pub fn parse(&mut self) -> ParseResult<Program> {
+        let mut statements = Vec::new();
+
+        self.skip_newlines();
+
+        while !self.is_at_end() {
+            let stmt = self.parse_statement()?;
+            statements.push(stmt);
+            self.skip_newlines();
+        }
+
+        Ok(Program { statements })
+    }
+
+    /// Parses a single statement
+    fn parse_statement(&mut self) -> ParseResult<Statement> {
+        // Check if this is an assignment (identifier = expression)
+        if let Some(token) = self.current_token() {
+            if let TokenType::Identifier(name) = &token.token_type {
+                let name = name.clone();
+                // Look ahead to see if there's an equals sign
+                if self.position + 1 < self.tokens.len() {
+                    if let Some(next_token) = self.tokens.get(self.position + 1) {
+                        if next_token.token_type == TokenType::Equals {
+                            // This is an assignment
+                            self.advance(); // consume identifier
+                            self.advance(); // consume '='
+                            let value = self.parse_expression(0)?;
+
+                            // Consume optional newline or require EOF
+                            if let Some(token) = self.current_token() {
+                                if token.token_type == TokenType::Newline {
+                                    self.advance();
+                                }
+                            }
+
+                            return Ok(Statement::Assignment { name, value });
+                        }
+                    }
+                }
+            }
+        }
+
+        // Otherwise, parse as expression statement
+        let expr = self.parse_expression(0)?;
+
+        // Consume optional newline
+        if let Some(token) = self.current_token() {
+            if token.token_type == TokenType::Newline {
+                self.advance();
+            }
+        }
+
+        Ok(Statement::Expression(expr))
+    }
+
+    /// Legacy method for parsing a single expression (for backwards compatibility)
+    pub fn parse_expression_only(&mut self) -> ParseResult<Expr> {
         self.parse_expression(0)
     }
 
-    /// Parses a primary expression (integer or grouped expression)
+    /// Parses a primary expression (integer, string, identifier, function call, or grouped expression)
     fn parse_primary(&mut self) -> ParseResult<Expr> {
         let token = self
             .current_token()
@@ -90,6 +158,70 @@ impl Parser {
                 let value = *n;
                 self.advance();
                 Ok(Expr::Integer(value))
+            }
+            TokenType::String(s) => {
+                let value = s.clone();
+                self.advance();
+                Ok(Expr::String(value))
+            }
+            TokenType::Identifier(name) => {
+                let name = name.clone();
+                self.advance();
+
+                // Check if this is a function call
+                if let Some(token) = self.current_token() {
+                    if token.token_type == TokenType::LeftParen {
+                        self.advance(); // consume '('
+
+                        let mut args = Vec::new();
+
+                        // Parse arguments
+                        if let Some(token) = self.current_token() {
+                            if token.token_type != TokenType::RightParen {
+                                loop {
+                                    args.push(self.parse_expression(0)?);
+
+                                    if let Some(token) = self.current_token() {
+                                        if token.token_type == TokenType::Comma {
+                                            self.advance(); // consume ','
+                                            continue;
+                                        } else if token.token_type == TokenType::RightParen {
+                                            break;
+                                        } else {
+                                            return Err(ParseError::UnexpectedToken {
+                                                expected: "',' or ')'".to_string(),
+                                                found: token.clone(),
+                                            });
+                                        }
+                                    } else {
+                                        return Err(ParseError::UnexpectedEof {
+                                            expected: "')'".to_string(),
+                                        });
+                                    }
+                                }
+                            }
+                        }
+
+                        let token =
+                            self.current_token()
+                                .ok_or_else(|| ParseError::UnexpectedEof {
+                                    expected: "')'".to_string(),
+                                })?;
+
+                        if token.token_type != TokenType::RightParen {
+                            return Err(ParseError::UnexpectedToken {
+                                expected: "')'".to_string(),
+                                found: token.clone(),
+                            });
+                        }
+
+                        self.advance(); // consume ')'
+                        return Ok(Expr::FunctionCall { name, args });
+                    }
+                }
+
+                // Otherwise, it's just an identifier
+                Ok(Expr::Identifier(name))
             }
             TokenType::LeftParen => {
                 self.advance(); // consume '('
@@ -134,6 +266,14 @@ impl Parser {
 
         while let Some(token) = self.current_token() {
             if self.is_at_end() {
+                break;
+            }
+
+            // Stop at statement terminators
+            if matches!(
+                token.token_type,
+                TokenType::Newline | TokenType::Comma | TokenType::RightParen
+            ) {
                 break;
             }
 

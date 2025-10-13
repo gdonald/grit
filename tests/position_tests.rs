@@ -33,18 +33,23 @@ fn test_token_positions_multiple_lines() {
     assert_eq!(tokens[2].column, 5);
     assert_eq!(tokens[2].token_type, TokenType::Integer(2));
 
-    // Line 2: "3 * 4"
-    assert_eq!(tokens[3].line, 2);
-    assert_eq!(tokens[3].column, 1);
-    assert_eq!(tokens[3].token_type, TokenType::Integer(3));
+    // Newline token
+    assert_eq!(tokens[3].line, 1);
+    assert_eq!(tokens[3].column, 6);
+    assert_eq!(tokens[3].token_type, TokenType::Newline);
 
+    // Line 2: "3 * 4"
     assert_eq!(tokens[4].line, 2);
-    assert_eq!(tokens[4].column, 3);
-    assert_eq!(tokens[4].token_type, TokenType::Multiply);
+    assert_eq!(tokens[4].column, 1);
+    assert_eq!(tokens[4].token_type, TokenType::Integer(3));
 
     assert_eq!(tokens[5].line, 2);
-    assert_eq!(tokens[5].column, 5);
-    assert_eq!(tokens[5].token_type, TokenType::Integer(4));
+    assert_eq!(tokens[5].column, 3);
+    assert_eq!(tokens[5].token_type, TokenType::Multiply);
+
+    assert_eq!(tokens[6].line, 2);
+    assert_eq!(tokens[6].column, 5);
+    assert_eq!(tokens[6].token_type, TokenType::Integer(4));
 }
 
 #[test]

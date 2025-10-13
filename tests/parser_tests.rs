@@ -1,12 +1,22 @@
 use grit::lexer::Tokenizer;
-use grit::parser::{BinaryOperator, Expr, Parser};
+use grit::parser::{BinaryOperator, Expr, Parser, Statement};
 
-/// Helper function to parse a string
+/// Helper function to parse a string as a single expression
 fn parse_string(input: &str) -> Result<Expr, String> {
     let mut tokenizer = Tokenizer::new(input);
     let tokens = tokenizer.tokenize();
     let mut parser = Parser::new(tokens);
-    parser.parse().map_err(|e| e.to_string())
+    let program = parser.parse().map_err(|e| e.to_string())?;
+
+    // Extract the first statement's expression
+    if program.statements.is_empty() {
+        return Err("No statements found".to_string());
+    }
+
+    match &program.statements[0] {
+        Statement::Expression(expr) => Ok(expr.clone()),
+        Statement::Assignment { value, .. } => Ok(value.clone()),
+    }
 }
 
 #[test]

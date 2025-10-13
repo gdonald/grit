@@ -3,16 +3,21 @@
 pub enum TokenType {
     // Literals
     Integer(i64),
+    String(String),
+    Identifier(String),
 
     // Operators
     Plus,
     Minus,
     Multiply,
     Divide,
+    Equals,
 
     // Delimiters
     LeftParen,
     RightParen,
+    Comma,
+    Newline,
 
     // Special
     Eof,

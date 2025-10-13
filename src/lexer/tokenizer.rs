@@ -48,15 +48,65 @@ impl Tokenizer {
         ch
     }
 
-    /// Skips whitespace characters
+    /// Skips whitespace characters (excluding newlines)
     fn skip_whitespace(&mut self) {
         while let Some(ch) = self.current_char() {
-            if ch.is_whitespace() {
+            if ch.is_whitespace() && ch != '\n' {
                 self.advance();
             } else {
                 break;
             }
         }
+    }
+
+    /// Reads an identifier or keyword from the input
+    fn read_identifier(&mut self) -> String {
+        let mut identifier = String::new();
+
+        while let Some(ch) = self.current_char() {
+            if ch.is_alphanumeric() || ch == '_' {
+                identifier.push(ch);
+                self.advance();
+            } else {
+                break;
+            }
+        }
+
+        identifier
+    }
+
+    /// Reads a string literal from the input (single-quoted)
+    fn read_string(&mut self) -> String {
+        let mut string = String::new();
+        self.advance(); // consume opening quote
+
+        while let Some(ch) = self.current_char() {
+            if ch == '\'' {
+                self.advance(); // consume closing quote
+                break;
+            } else if ch == '\\' {
+                self.advance();
+                if let Some(escaped) = self.current_char() {
+                    match escaped {
+                        'n' => string.push('\n'),
+                        't' => string.push('\t'),
+                        'r' => string.push('\r'),
+                        '\\' => string.push('\\'),
+                        '\'' => string.push('\''),
+                        _ => {
+                            string.push('\\');
+                            string.push(escaped);
+                        }
+                    }
+                    self.advance();
+                }
+            } else {
+                string.push(ch);
+                self.advance();
+            }
+        }
+
+        string
     }
 
     /// Reads an integer from the input
@@ -88,6 +138,12 @@ impl Tokenizer {
                 if ch.is_ascii_digit() {
                     let number = self.read_integer();
                     Token::new(TokenType::Integer(number), line, column)
+                } else if ch.is_alphabetic() || ch == '_' {
+                    let identifier = self.read_identifier();
+                    Token::new(TokenType::Identifier(identifier), line, column)
+                } else if ch == '\'' {
+                    let string = self.read_string();
+                    Token::new(TokenType::String(string), line, column)
                 } else {
                     self.advance();
                     let token_type = match ch {
@@ -95,8 +151,11 @@ impl Tokenizer {
                         '-' => TokenType::Minus,
                         '*' => TokenType::Multiply,
                         '/' => TokenType::Divide,
+                        '=' => TokenType::Equals,
                         '(' => TokenType::LeftParen,
                         ')' => TokenType::RightParen,
+                        ',' => TokenType::Comma,
+                        '\n' => TokenType::Newline,
                         _ => {
                             panic!(
                                 "Unexpected character '{}' at line {}, column {}",
