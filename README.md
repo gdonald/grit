@@ -284,7 +284,7 @@ Serve with live reload:
 mdbook serve book --open
 ```
 
-Continuous integration builds the book on every push to `main` and publishes the HTML to GitHub Pages (branch `gh-pages`).
+Continuous integration builds the book on every push to `main` and publishes the HTML to GitHub Pages (branch `gh-pages`). View the live docs at [https://gdonald.github.io/grit/](https://gdonald.github.io/grit/).
 
 ## Development Roadmap
 
