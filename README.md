@@ -11,18 +11,23 @@ Currently, Grit supports:
   - Integer literals
   - String literals (single-quoted)
   - Identifiers
+  - Keywords: `fn`
   - Arithmetic operators: `+`, `-`, `*`, `/`
   - Assignment operator: `=`
   - Parentheses for grouping expressions
+  - Braces for function bodies
   - Commas for function arguments
 - **Parsing**: Building Abstract Syntax Trees (AST)
   - Variable assignments
   - Variable references
+  - Function definitions with parameters
   - Function calls
   - Operator precedence (multiplication/division before addition/subtraction)
   - Left-to-right associativity
   - Parentheses for overriding precedence
 - **Code Generation**: Transpiling Grit ASTs into Rust source code
+  - Function definitions with typed parameters
+  - Implicit returns (last expression in function body)
   - Variable declarations (`let` statements)
   - Expression statements
   - `print()` function transpiles to `println!()` macro
@@ -57,7 +62,8 @@ grit/
 │   └── run_function_tests.rs    # Library run() function tests
 ├── examples/             # Example Grit programs
 │   ├── simple.grit       # Simple arithmetic example
-│   └── variables.grit    # Variable assignment and print() example
+│   ├── variables.grit    # Variable assignment and print() example
+│   └── functions.grit    # User-defined functions example
 ├── .github/
 │   └── workflows/
 │       └── ci.yml        # GitHub Actions CI workflow
@@ -91,10 +97,11 @@ cargo test --test next_token_tests     # Direct next_token() calls (12 tests)
 cargo test --test parser_tests         # Parser and AST (17 tests)
 cargo test --test cli_tests            # CLI integration (8 tests)
 cargo test --test run_function_tests   # Library run() function (9 tests)
+cargo test --test function_tests       # Function definitions and calls (24 tests)
 cargo test --lib                       # Library unit tests (38 tests)
 ```
 
-**Total: 118 tests** covering tokenization, parsing, AST, interpreter, error handling, edge cases, and CLI functionality.
+**Total: 189 tests** covering tokenization, parsing, AST, code generation, functions, error handling, edge cases, and CLI functionality.
 
 ### Running Code Coverage Locally
 
@@ -249,6 +256,50 @@ rustc output.rs && ./output
 # Output: c: 3
 ```
 
+### Functions Example
+
+Given a file `examples/functions.grit`:
+
+```grit
+fn add(a, b) {
+  a + b
+}
+
+a = 1
+b = 2
+
+c = add(a, b)
+print('c: %d', c)
+```
+
+Running the program:
+
+```bash
+cargo run -- examples/functions.grit
+```
+
+Output (generated Rust code):
+
+```rust
+fn add(a: i64, b: i64) -> i64 {
+    a + b
+}
+
+fn main() {
+    let a = 1;
+    let b = 2;
+    let c = add(a, b);
+    println!("c: {}", c);
+}
+```
+
+The transpiler:
+- Converts Grit function definitions to typed Rust functions
+- Automatically adds type annotations (`i64`) to parameters
+- Handles implicit returns (last expression without semicolon)
+- Places user functions before the `main()` function
+- Allows calling user-defined functions from main code
+
 ## Continuous Integration
 
 The project uses GitHub Actions for continuous integration. On every push and pull request to the `main` branch, the workflow will:
@@ -302,7 +353,12 @@ Continuous integration builds the book on every push to `main` and publishes the
   - [x] String literals
   - [x] Built-in `print()` function (transpiles to `println!()` macro)
   - [x] Format string conversion (`%d` → `{}`, `%s` → `{}`)
-- [ ] Support for user-defined functions
+- [x] Support for user-defined functions
+  - [x] Function definitions with `fn` keyword
+  - [x] Function parameters (transpile to typed Rust parameters)
+  - [x] Function bodies with multiple statements
+  - [x] Implicit returns (last expression in function body)
+  - [x] Function calls with arguments
 - [ ] Support for control flow (if/else, loops)
 - [ ] Type system
 - [ ] Standard library

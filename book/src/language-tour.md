@@ -1,8 +1,8 @@
 # Language Tour
 
-Grit currently focuses on arithmetic expressions. Source programs are tokenized, parsed into an Abstract Syntax Tree (AST), and then transpiled to Rust code.
+Grit is a scripting language that transpiles to Rust. It supports arithmetic expressions, variables, and user-defined functions. Source programs are tokenized, parsed into an Abstract Syntax Tree (AST), and then transpiled to Rust code.
 
-## Example
+## Arithmetic Expressions
 
 ```text
 (10 + 20) * (30 - 15) / 5
@@ -39,7 +39,72 @@ AST:
 
 The parser performs precedence climbing so multiplication and division bind tighter than addition and subtraction. Parentheses override precedence, and expressions associate to the left.
 
+## Variables
+
+Grit supports variable assignments and references:
+
+```grit
+a = 1
+b = 2
+
+c = a + b
+
+print('c: %d', c)
+```
+
+Running this produces the following Rust code:
+
+```rust
+fn main() {
+    let a = 1;
+    let b = 2;
+    let c = a + b;
+    println!("c: {}", c);
+}
+```
+
+The `print()` function is a built-in that transpiles to Rust's `println!()` macro. Format specifiers like `%d` (integer) and `%s` (string) are automatically converted to Rust's `{}` placeholder syntax.
+
+## User-Defined Functions
+
+You can define your own functions with the `fn` keyword:
+
+```grit
+fn add(a, b) {
+  a + b
+}
+
+a = 1
+b = 2
+
+c = add(a, b)
+print('c: %d', c)
+```
+
+This transpiles to:
+
+```rust
+fn add(a: i64, b: i64) -> i64 {
+    a + b
+}
+
+fn main() {
+    let a = 1;
+    let b = 2;
+    let c = add(a, b);
+    println!("c: {}", c);
+}
+```
+
+Key features:
+- Function parameters are automatically typed as `i64`
+- Functions return `i64` by default
+- The last expression in a function body is an implicit return (no semicolon)
+- Functions can have multiple statements in their body
+- User-defined functions are placed before `main()` in the generated code
+
 ## Next steps
 
-- Try editing `examples/simple.grit` and rerunning the CLI.
-- Look at the parser tests in `tests/parser_tests.rs` for more usage examples.
+- Try editing `examples/simple.grit`, `examples/variables.grit`, or `examples/functions.grit` and rerunning the CLI
+- Look at the tests in `tests/` for more usage examples
+- Explore the parser implementation in `src/parser/parse.rs`
