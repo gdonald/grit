@@ -179,8 +179,8 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="language-tour"><a class="header" href="#language-tour">Language Tour</a></h1>
-<p>Grit currently focuses on arithmetic expressions. Source programs are tokenized, parsed into an Abstract Syntax Tree (AST), and then transpiled to Rust code.</p>
-<h2 id="example"><a class="header" href="#example">Example</a></h2>
+<p>Grit is a scripting language that transpiles to Rust. It supports arithmetic expressions, variables, and user-defined functions. Source programs are tokenized, parsed into an Abstract Syntax Tree (AST), and then transpiled to Rust code.</p>
+<h2 id="arithmetic-expressions"><a class="header" href="#arithmetic-expressions">Arithmetic Expressions</a></h2>
 <pre><code class="language-text">(10 + 20) * (30 - 15) / 5
 </code></pre>
 <p>Running the CLI:</p>
@@ -207,10 +207,59 @@ AST:
   ((10 + 20) * (30 - 15)) / 5
 </code></pre>
 <p>The parser performs precedence climbing so multiplication and division bind tighter than addition and subtraction. Parentheses override precedence, and expressions associate to the left.</p>
+<h2 id="variables"><a class="header" href="#variables">Variables</a></h2>
+<p>Grit supports variable assignments and references:</p>
+<pre><code class="language-grit">a = 1
+b = 2
+
+c = a + b
+
+print('c: %d', c)
+</code></pre>
+<p>Running this produces the following Rust code:</p>
+<pre><pre class="playground"><code class="language-rust">fn main() {
+    let a = 1;
+    let b = 2;
+    let c = a + b;
+    println!("c: {}", c);
+}</code></pre></pre>
+<p>The <code>print()</code> function is a built-in that transpiles to Rust's <code>println!()</code> macro. Format specifiers like <code>%d</code> (integer) and <code>%s</code> (string) are automatically converted to Rust's <code>{}</code> placeholder syntax.</p>
+<h2 id="user-defined-functions"><a class="header" href="#user-defined-functions">User-Defined Functions</a></h2>
+<p>You can define your own functions with the <code>fn</code> keyword:</p>
+<pre><code class="language-grit">fn add(a, b) {
+  a + b
+}
+
+a = 1
+b = 2
+
+c = add(a, b)
+print('c: %d', c)
+</code></pre>
+<p>This transpiles to:</p>
+<pre><pre class="playground"><code class="language-rust">fn add(a: i64, b: i64) -&gt; i64 {
+    a + b
+}
+
+fn main() {
+    let a = 1;
+    let b = 2;
+    let c = add(a, b);
+    println!("c: {}", c);
+}</code></pre></pre>
+<p>Key features:</p>
+<ul>
+<li>Function parameters are automatically typed as <code>i64</code></li>
+<li>Functions return <code>i64</code> by default</li>
+<li>The last expression in a function body is an implicit return (no semicolon)</li>
+<li>Functions can have multiple statements in their body</li>
+<li>User-defined functions are placed before <code>main()</code> in the generated code</li>
+</ul>
 <h2 id="next-steps"><a class="header" href="#next-steps">Next steps</a></h2>
 <ul>
-<li>Try editing <code>examples/simple.grit</code> and rerunning the CLI.</li>
-<li>Look at the parser tests in <code>tests/parser_tests.rs</code> for more usage examples.</li>
+<li>Try editing <code>examples/simple.grit</code>, <code>examples/variables.grit</code>, or <code>examples/functions.grit</code> and rerunning the CLI</li>
+<li>Look at the tests in <code>tests/</code> for more usage examples</li>
+<li>Explore the parser implementation in <code>src/parser/parse.rs</code></li>
 </ul>
 
                     </main>

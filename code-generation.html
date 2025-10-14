@@ -219,6 +219,57 @@ assert_eq!(
     "3 / (1 + 2)"
 );</code></pre>
 <p>The snippet above is executed as part of <code>mdbook test</code>, keeping documentation and code in sync.</p>
+<h3 id="variables-and-print"><a class="header" href="#variables-and-print">Variables and Print</a></h3>
+<p>The code generator handles variable assignments and the built-in <code>print()</code> function:</p>
+<pre><code class="language-grit">a = 5
+b = 10
+print('sum: %d', a + b)
+</code></pre>
+<p>Generates:</p>
+<pre><pre class="playground"><code class="language-rust">fn main() {
+    let a = 5;
+    let b = 10;
+    println!("sum: {}", a + b);
+}</code></pre></pre>
+<h3 id="user-defined-functions"><a class="header" href="#user-defined-functions">User-Defined Functions</a></h3>
+<p>Functions are generated with typed parameters and proper Rust syntax:</p>
+<pre><code class="language-grit">fn multiply(x, y) {
+  x * y
+}
+
+result = multiply(3, 4)
+</code></pre>
+<p>Generates:</p>
+<pre><pre class="playground"><code class="language-rust">fn multiply(x: i64, y: i64) -&gt; i64 {
+    x * y
+}
+
+fn main() {
+    let result = multiply(3, 4);
+}</code></pre></pre>
+<p>Key features:</p>
+<ul>
+<li><strong>Typed parameters</strong>: All parameters are typed as <code>i64</code></li>
+<li><strong>Return type</strong>: Functions return <code>i64</code> by default</li>
+<li><strong>Implicit returns</strong>: The last expression in a function body becomes the return value (no semicolon)</li>
+<li><strong>Proper ordering</strong>: User-defined functions are placed before <code>main()</code></li>
+</ul>
+<h3 id="multi-statement-functions"><a class="header" href="#multi-statement-functions">Multi-Statement Functions</a></h3>
+<p>Functions can contain multiple statements:</p>
+<pre><code class="language-grit">fn calculate(x) {
+  doubled = x * 2
+  doubled + 1
+}
+</code></pre>
+<p>Generates:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn calculate(x: i64) -&gt; i64 {
+    let doubled = x * 2;
+    doubled + 1
+}
+<span class="boring">}</span></code></pre></pre>
+<p>The last expression (<code>doubled + 1</code>) becomes the return value, while earlier statements like assignments are properly terminated with semicolons.</p>
 
                     </main>
 
