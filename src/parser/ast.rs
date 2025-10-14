@@ -1,6 +1,13 @@
 /// Statement in the program
 #[derive(Debug, Clone, PartialEq)]
 pub enum Statement {
+    /// Function definition: fn name(params) { body }
+    FunctionDef {
+        name: String,
+        params: Vec<String>,
+        body: Vec<Statement>,
+    },
+
     /// Variable assignment: identifier = expression
     Assignment { name: String, value: Expr },
 
@@ -73,6 +80,13 @@ impl std::fmt::Display for BinaryOperator {
 impl std::fmt::Display for Statement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Statement::FunctionDef {
+                name,
+                params,
+                body: _,
+            } => {
+                write!(f, "fn {}({})", name, params.join(", "))
+            }
             Statement::Assignment { name, value } => write!(f, "{} = {}", name, value),
             Statement::Expression(expr) => write!(f, "{}", expr),
         }

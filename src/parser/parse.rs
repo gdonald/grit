@@ -100,6 +100,13 @@ impl Parser {
 
     /// Parses a single statement
     fn parse_statement(&mut self) -> ParseResult<Statement> {
+        // Check if this is a function definition
+        if let Some(token) = self.current_token() {
+            if token.token_type == TokenType::Fn {
+                return self.parse_function_def();
+            }
+        }
+
         // Check if this is an assignment (identifier = expression)
         if let Some(token) = self.current_token() {
             if let TokenType::Identifier(name) = &token.token_type {
@@ -138,6 +145,141 @@ impl Parser {
         }
 
         Ok(Statement::Expression(expr))
+    }
+
+    /// Parses a function definition: fn name(param1, param2, ...) { body }
+    fn parse_function_def(&mut self) -> ParseResult<Statement> {
+        // Consume 'fn' keyword
+        self.advance();
+
+        // Parse function name
+        let name = if let Some(token) = self.current_token() {
+            if let TokenType::Identifier(name) = &token.token_type {
+                let name = name.clone();
+                self.advance();
+                name
+            } else {
+                return Err(ParseError::UnexpectedToken {
+                    expected: "function name".to_string(),
+                    found: token.clone(),
+                });
+            }
+        } else {
+            return Err(ParseError::UnexpectedEof {
+                expected: "function name".to_string(),
+            });
+        };
+
+        // Expect '('
+        if let Some(token) = self.current_token() {
+            if token.token_type != TokenType::LeftParen {
+                return Err(ParseError::UnexpectedToken {
+                    expected: "'('".to_string(),
+                    found: token.clone(),
+                });
+            }
+            self.advance();
+        } else {
+            return Err(ParseError::UnexpectedEof {
+                expected: "'('".to_string(),
+            });
+        }
+
+        // Parse parameters
+        let mut params = Vec::new();
+        loop {
+            // Skip newlines
+            self.skip_newlines();
+
+            if let Some(token) = self.current_token() {
+                if token.token_type == TokenType::RightParen {
+                    self.advance();
+                    break;
+                }
+
+                if let TokenType::Identifier(param) = &token.token_type {
+                    params.push(param.clone());
+                    self.advance();
+
+                    // Check for comma or right paren
+                    self.skip_newlines();
+                    if let Some(token) = self.current_token() {
+                        if token.token_type == TokenType::Comma {
+                            self.advance();
+                        } else if token.token_type == TokenType::RightParen {
+                            self.advance();
+                            break;
+                        } else {
+                            return Err(ParseError::UnexpectedToken {
+                                expected: "',' or ')'".to_string(),
+                                found: token.clone(),
+                            });
+                        }
+                    } else {
+                        return Err(ParseError::UnexpectedEof {
+                            expected: "',' or ')'".to_string(),
+                        });
+                    }
+                } else {
+                    return Err(ParseError::UnexpectedToken {
+                        expected: "parameter name".to_string(),
+                        found: token.clone(),
+                    });
+                }
+            } else {
+                return Err(ParseError::UnexpectedEof {
+                    expected: "')' or parameter name".to_string(),
+                });
+            }
+        }
+
+        // Skip newlines before '{'
+        self.skip_newlines();
+
+        // Expect '{'
+        if let Some(token) = self.current_token() {
+            if token.token_type != TokenType::LeftBrace {
+                return Err(ParseError::UnexpectedToken {
+                    expected: "'{'".to_string(),
+                    found: token.clone(),
+                });
+            }
+            self.advance();
+        } else {
+            return Err(ParseError::UnexpectedEof {
+                expected: "'{'".to_string(),
+            });
+        }
+
+        // Parse function body
+        let mut body = Vec::new();
+        self.skip_newlines();
+
+        loop {
+            if let Some(token) = self.current_token() {
+                if token.token_type == TokenType::RightBrace {
+                    self.advance();
+                    break;
+                }
+
+                let stmt = self.parse_statement()?;
+                body.push(stmt);
+                self.skip_newlines();
+            } else {
+                return Err(ParseError::UnexpectedEof {
+                    expected: "'}'".to_string(),
+                });
+            }
+        }
+
+        // Consume optional newline after function
+        if let Some(token) = self.current_token() {
+            if token.token_type == TokenType::Newline {
+                self.advance();
+            }
+        }
+
+        Ok(Statement::FunctionDef { name, params, body })
     }
 
     /// Legacy method for parsing a single expression (for backwards compatibility)

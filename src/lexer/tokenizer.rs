@@ -140,7 +140,11 @@ impl Tokenizer {
                     Token::new(TokenType::Integer(number), line, column)
                 } else if ch.is_alphabetic() || ch == '_' {
                     let identifier = self.read_identifier();
-                    Token::new(TokenType::Identifier(identifier), line, column)
+                    let token_type = match identifier.as_str() {
+                        "fn" => TokenType::Fn,
+                        _ => TokenType::Identifier(identifier),
+                    };
+                    Token::new(token_type, line, column)
                 } else if ch == '\'' {
                     let string = self.read_string();
                     Token::new(TokenType::String(string), line, column)
@@ -154,6 +158,8 @@ impl Tokenizer {
                         '=' => TokenType::Equals,
                         '(' => TokenType::LeftParen,
                         ')' => TokenType::RightParen,
+                        '{' => TokenType::LeftBrace,
+                        '}' => TokenType::RightBrace,
                         ',' => TokenType::Comma,
                         '\n' => TokenType::Newline,
                         _ => {

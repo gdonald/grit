@@ -24,20 +24,36 @@ impl CodeGenerator {
             }
         }
 
-        let mut body = String::new();
+        let mut code = String::new();
+        let mut main_body = String::new();
 
+        // Separate functions from main body statements
         for stmt in &program.statements {
-            body.push_str("    ");
-            body.push_str(&Self::generate_statement(stmt));
-            body.push('\n');
+            match stmt {
+                Statement::FunctionDef { .. } => {
+                    code.push_str(&Self::generate_statement(stmt));
+                    code.push('\n');
+                }
+                _ => {
+                    main_body.push_str("    ");
+                    main_body.push_str(&Self::generate_statement(stmt));
+                    main_body.push('\n');
+                }
+            }
         }
 
-        format!("fn main() {{\n{}}}\n", body)
+        // Add main function
+        code.push_str(&format!("fn main() {{\n{}}}\n", main_body));
+
+        code
     }
 
     /// Generates Rust code for a statement.
     fn generate_statement(stmt: &Statement) -> String {
         match stmt {
+            Statement::FunctionDef { name, params, body } => {
+                Self::generate_function_def(name, params, body)
+            }
             Statement::Assignment { name, value } => {
                 format!("let {} = {};", name, Self::generate_expression(value))
             }
@@ -53,6 +69,46 @@ impl CodeGenerator {
                 }
             }
         }
+    }
+
+    /// Generates Rust code for a function definition.
+    fn generate_function_def(name: &str, params: &[String], body: &[Statement]) -> String {
+        let params_str = params.join(": i64, ");
+        let params_with_types = if params.is_empty() {
+            String::new()
+        } else {
+            format!("{}: i64", params_str)
+        };
+
+        let mut body_code = String::new();
+
+        // Check if the last statement is an expression (implicit return)
+        let has_implicit_return = if let Some(last) = body.last() {
+            matches!(last, Statement::Expression(_))
+        } else {
+            false
+        };
+
+        for (i, stmt) in body.iter().enumerate() {
+            body_code.push_str("    ");
+
+            // If this is the last statement and it's an expression, make it a return
+            if i == body.len() - 1 && has_implicit_return {
+                if let Statement::Expression(expr) = stmt {
+                    body_code.push_str(&Self::generate_expression(expr));
+                } else {
+                    body_code.push_str(&Self::generate_statement(stmt));
+                }
+            } else {
+                body_code.push_str(&Self::generate_statement(stmt));
+            }
+            body_code.push('\n');
+        }
+
+        format!(
+            "fn {}({}) -> i64 {{\n{}}}\n",
+            name, params_with_types, body_code
+        )
     }
 
     /// Generates a println! call from print() arguments.

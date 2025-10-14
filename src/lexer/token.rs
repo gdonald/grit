@@ -16,8 +16,13 @@ pub enum TokenType {
     // Delimiters
     LeftParen,
     RightParen,
+    LeftBrace,
+    RightBrace,
     Comma,
     Newline,
+
+    // Keywords
+    Fn,
 
     // Special
     Eof,

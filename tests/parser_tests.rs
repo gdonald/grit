@@ -16,6 +16,7 @@ fn parse_string(input: &str) -> Result<Expr, String> {
     match &program.statements[0] {
         Statement::Expression(expr) => Ok(expr.clone()),
         Statement::Assignment { value, .. } => Ok(value.clone()),
+        Statement::FunctionDef { .. } => Err("Unexpected function definition".to_string()),
     }
 }
 
