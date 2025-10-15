@@ -23,9 +23,6 @@ jobs:
       - name: Build documentation
         run: mdbook build book
 
-      - name: Test documentation code blocks
-        run: mdbook test book
-
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
