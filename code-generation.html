@@ -270,6 +270,54 @@ fn main() {
 }
 <span class="boring">}</span></code></pre></pre>
 <p>The last expression (<code>doubled + 1</code>) becomes the return value, while earlier statements like assignments are properly terminated with semicolons.</p>
+<h3 id="control-flow"><a class="header" href="#control-flow">Control Flow</a></h3>
+<p>Control flow statements are transpiled to their Rust equivalents:</p>
+<pre><code class="language-grit">if x &lt; 10 {
+  print('less than 10')
+} elif x == 10 {
+  print('exactly 10')
+} else {
+  print('greater than 10')
+}
+</code></pre>
+<p>Generates:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>if x &lt; 10 {
+    println!("less than 10");
+} else if x == 10 {
+    println!("exactly 10");
+} else {
+    println!("greater than 10");
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="while-loops"><a class="header" href="#while-loops">While Loops</a></h3>
+<p>While loops maintain their structure:</p>
+<pre><code class="language-grit">counter = 0
+while counter &lt; 5 {
+  print('count: %d', counter)
+  counter = counter + 1
+}
+</code></pre>
+<p>Generates:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let counter = 0;
+while counter &lt; 5 {
+    println!("count: {}", counter);
+    let counter = counter + 1;
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="comparison-operators"><a class="header" href="#comparison-operators">Comparison Operators</a></h3>
+<p>All comparison operators are directly mapped to Rust equivalents:</p>
+<ul>
+<li><code>==</code> → <code>==</code></li>
+<li><code>!=</code> → <code>!=</code></li>
+<li><code>&lt;</code> → <code>&lt;</code></li>
+<li><code>&lt;=</code> → <code>&lt;=</code></li>
+<li><code>&gt;</code> → <code>&gt;</code></li>
+<li><code>&gt;=</code> → <code>&gt;=</code></li>
+</ul>
 
                     </main>
 

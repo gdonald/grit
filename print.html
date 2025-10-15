@@ -266,9 +266,60 @@ fn main() {
 <li>Functions can have multiple statements in their body</li>
 <li>User-defined functions are placed before <code>main()</code> in the generated code</li>
 </ul>
+<h2 id="control-flow"><a class="header" href="#control-flow">Control Flow</a></h2>
+<p>Grit supports conditional statements and loops:</p>
+<pre><code class="language-grit">a = 1
+b = 2
+
+if a &lt; b {
+  print('a &lt; b')
+} elif b &lt; a {
+  print('b &lt; a')
+} else {
+  print('a == b')
+}
+</code></pre>
+<p>This transpiles to:</p>
+<pre><pre class="playground"><code class="language-rust">fn main() {
+    let a = 1;
+    let b = 2;
+    if a &lt; b {
+        println!("a &lt; b");
+    } else if b &lt; a {
+        println!("b &lt; a");
+    } else {
+        println!("a == b");
+    }
+}</code></pre></pre>
+<h3 id="comparison-operators"><a class="header" href="#comparison-operators">Comparison Operators</a></h3>
+<p>Grit supports all standard comparison operators:</p>
+<ul>
+<li><code>==</code> - Equal to</li>
+<li><code>!=</code> - Not equal to</li>
+<li><code>&lt;</code> - Less than</li>
+<li><code>&lt;=</code> - Less than or equal to</li>
+<li><code>&gt;</code> - Greater than</li>
+<li><code>&gt;=</code> - Greater than or equal to</li>
+</ul>
+<h3 id="while-loops"><a class="header" href="#while-loops">While Loops</a></h3>
+<p>You can create loops with the <code>while</code> keyword:</p>
+<pre><code class="language-grit">x = 0
+while x &lt; 5 {
+  print('x: %d', x)
+  x = x + 1
+}
+</code></pre>
+<p>This generates a standard Rust while loop:</p>
+<pre><pre class="playground"><code class="language-rust">fn main() {
+    let x = 0;
+    while x &lt; 5 {
+        println!("x: {}", x);
+        let x = x + 1;
+    }
+}</code></pre></pre>
 <h2 id="next-steps"><a class="header" href="#next-steps">Next steps</a></h2>
 <ul>
-<li>Try editing <code>examples/simple.grit</code>, <code>examples/variables.grit</code>, or <code>examples/functions.grit</code> and rerunning the CLI</li>
+<li>Try editing <code>examples/simple.grit</code>, <code>examples/variables.grit</code>, <code>examples/functions.grit</code>, or <code>examples/control-flow.grit</code> and rerunning the CLI</li>
 <li>Look at the tests in <code>tests/</code> for more usage examples</li>
 <li>Explore the parser implementation in <code>src/parser/parse.rs</code></li>
 </ul>
@@ -364,6 +415,54 @@ fn main() {
 }
 <span class="boring">}</span></code></pre></pre>
 <p>The last expression (<code>doubled + 1</code>) becomes the return value, while earlier statements like assignments are properly terminated with semicolons.</p>
+<h3 id="control-flow-1"><a class="header" href="#control-flow-1">Control Flow</a></h3>
+<p>Control flow statements are transpiled to their Rust equivalents:</p>
+<pre><code class="language-grit">if x &lt; 10 {
+  print('less than 10')
+} elif x == 10 {
+  print('exactly 10')
+} else {
+  print('greater than 10')
+}
+</code></pre>
+<p>Generates:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>if x &lt; 10 {
+    println!("less than 10");
+} else if x == 10 {
+    println!("exactly 10");
+} else {
+    println!("greater than 10");
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="while-loops-1"><a class="header" href="#while-loops-1">While Loops</a></h3>
+<p>While loops maintain their structure:</p>
+<pre><code class="language-grit">counter = 0
+while counter &lt; 5 {
+  print('count: %d', counter)
+  counter = counter + 1
+}
+</code></pre>
+<p>Generates:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let counter = 0;
+while counter &lt; 5 {
+    println!("count: {}", counter);
+    let counter = counter + 1;
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="comparison-operators-1"><a class="header" href="#comparison-operators-1">Comparison Operators</a></h3>
+<p>All comparison operators are directly mapped to Rust equivalents:</p>
+<ul>
+<li><code>==</code> → <code>==</code></li>
+<li><code>!=</code> → <code>!=</code></li>
+<li><code>&lt;</code> → <code>&lt;</code></li>
+<li><code>&lt;=</code> → <code>&lt;=</code></li>
+<li><code>&gt;</code> → <code>&gt;</code></li>
+<li><code>&gt;=</code> → <code>&gt;=</code></li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="tooling"><a class="header" href="#tooling">Tooling</a></h1>
 <h2 id="building-the-docs"><a class="header" href="#building-the-docs">Building the Docs</a></h2>
 <p>Install mdBook locally:</p>
