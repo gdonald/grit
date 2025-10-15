@@ -57,6 +57,13 @@ impl CodeGenerator {
             Statement::Assignment { name, value } => {
                 format!("let {} = {};", name, Self::generate_expression(value))
             }
+            Statement::If {
+                condition,
+                then_branch,
+                elif_branches,
+                else_branch,
+            } => Self::generate_if_statement(condition, then_branch, elif_branches, else_branch),
+            Statement::While { condition, body } => Self::generate_while_statement(condition, body),
             Statement::Expression(expr) => {
                 match expr {
                     Expr::FunctionCall { name, args } if name == "print" => {
@@ -109,6 +116,72 @@ impl CodeGenerator {
             "fn {}({}) -> i64 {{\n{}}}\n",
             name, params_with_types, body_code
         )
+    }
+
+    /// Generates Rust code for an if statement
+    fn generate_if_statement(
+        condition: &Expr,
+        then_branch: &[Statement],
+        elif_branches: &[(Expr, Vec<Statement>)],
+        else_branch: &Option<Vec<Statement>>,
+    ) -> String {
+        let mut code = format!("if {} {{\n", Self::generate_expression(condition));
+
+        // Generate then branch
+        for stmt in then_branch {
+            code.push_str("        ");
+            code.push_str(&Self::generate_statement(stmt));
+            code.push('\n');
+        }
+
+        code.push_str("    }");
+
+        // Generate elif branches
+        for (elif_condition, elif_body) in elif_branches {
+            code.push_str(&format!(
+                " else if {} {{\n",
+                Self::generate_expression(elif_condition)
+            ));
+
+            for stmt in elif_body {
+                code.push_str("        ");
+                code.push_str(&Self::generate_statement(stmt));
+                code.push('\n');
+            }
+
+            code.push_str("    }");
+        }
+
+        // Generate else branch
+        if let Some(else_body) = else_branch {
+            code.push_str(" else {\n");
+
+            for stmt in else_body {
+                code.push_str("        ");
+                code.push_str(&Self::generate_statement(stmt));
+                code.push('\n');
+            }
+
+            code.push_str("    }");
+        }
+
+        code
+    }
+
+    /// Generates Rust code for a while loop
+    fn generate_while_statement(condition: &Expr, body: &[Statement]) -> String {
+        let mut code = format!("while {} {{\n", Self::generate_expression(condition));
+
+        // Generate body
+        for stmt in body {
+            code.push_str("        ");
+            code.push_str(&Self::generate_statement(stmt));
+            code.push('\n');
+        }
+
+        code.push_str("    }");
+
+        code
     }
 
     /// Generates a println! call from print() arguments.
@@ -185,6 +258,12 @@ impl CodeGenerator {
             BinaryOperator::Subtract => "-",
             BinaryOperator::Multiply => "*",
             BinaryOperator::Divide => "/",
+            BinaryOperator::EqualEqual => "==",
+            BinaryOperator::NotEqual => "!=",
+            BinaryOperator::LessThan => "<",
+            BinaryOperator::LessThanOrEqual => "<=",
+            BinaryOperator::GreaterThan => ">",
+            BinaryOperator::GreaterThanOrEqual => ">=",
         }
     }
 }

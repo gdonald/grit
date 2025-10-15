@@ -1,0 +1,26 @@
+a = 1
+b = 2
+
+if a < b {
+  print('a < b')
+} elif b < a {
+  print('b < a')
+} else {
+  print('a == b')
+}
+
+c = 2
+
+if c == b {
+  print('c == b')
+} else {
+  print('c != b')
+}
+
+d = 3
+
+if d != a {
+  print('d != a')
+} else {
+  print('d == a')
+}

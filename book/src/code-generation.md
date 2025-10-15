@@ -124,3 +124,61 @@ fn calculate(x: i64) -> i64 {
 ```
 
 The last expression (`doubled + 1`) becomes the return value, while earlier statements like assignments are properly terminated with semicolons.
+
+### Control Flow
+
+Control flow statements are transpiled to their Rust equivalents:
+
+```grit
+if x < 10 {
+  print('less than 10')
+} elif x == 10 {
+  print('exactly 10')
+} else {
+  print('greater than 10')
+}
+```
+
+Generates:
+
+```rust
+if x < 10 {
+    println!("less than 10");
+} else if x == 10 {
+    println!("exactly 10");
+} else {
+    println!("greater than 10");
+}
+```
+
+### While Loops
+
+While loops maintain their structure:
+
+```grit
+counter = 0
+while counter < 5 {
+  print('count: %d', counter)
+  counter = counter + 1
+}
+```
+
+Generates:
+
+```rust
+let counter = 0;
+while counter < 5 {
+    println!("count: {}", counter);
+    let counter = counter + 1;
+}
+```
+
+### Comparison Operators
+
+All comparison operators are directly mapped to Rust equivalents:
+- `==` → `==`
+- `!=` → `!=`
+- `<` → `<`
+- `<=` → `<=`
+- `>` → `>`
+- `>=` → `>=`

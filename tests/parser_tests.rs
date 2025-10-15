@@ -17,6 +17,8 @@ fn parse_string(input: &str) -> Result<Expr, String> {
         Statement::Expression(expr) => Ok(expr.clone()),
         Statement::Assignment { value, .. } => Ok(value.clone()),
         Statement::FunctionDef { .. } => Err("Unexpected function definition".to_string()),
+        Statement::If { .. } => Err("Unexpected if statement".to_string()),
+        Statement::While { .. } => Err("Unexpected while statement".to_string()),
     }
 }
 

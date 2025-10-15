@@ -103,8 +103,75 @@ Key features:
 - Functions can have multiple statements in their body
 - User-defined functions are placed before `main()` in the generated code
 
+## Control Flow
+
+Grit supports conditional statements and loops:
+
+```grit
+a = 1
+b = 2
+
+if a < b {
+  print('a < b')
+} elif b < a {
+  print('b < a')
+} else {
+  print('a == b')
+}
+```
+
+This transpiles to:
+
+```rust
+fn main() {
+    let a = 1;
+    let b = 2;
+    if a < b {
+        println!("a < b");
+    } else if b < a {
+        println!("b < a");
+    } else {
+        println!("a == b");
+    }
+}
+```
+
+### Comparison Operators
+
+Grit supports all standard comparison operators:
+- `==` - Equal to
+- `!=` - Not equal to
+- `<` - Less than
+- `<=` - Less than or equal to
+- `>` - Greater than
+- `>=` - Greater than or equal to
+
+### While Loops
+
+You can create loops with the `while` keyword:
+
+```grit
+x = 0
+while x < 5 {
+  print('x: %d', x)
+  x = x + 1
+}
+```
+
+This generates a standard Rust while loop:
+
+```rust
+fn main() {
+    let x = 0;
+    while x < 5 {
+        println!("x: {}", x);
+        let x = x + 1;
+    }
+}
+```
+
 ## Next steps
 
-- Try editing `examples/simple.grit`, `examples/variables.grit`, or `examples/functions.grit` and rerunning the CLI
+- Try editing `examples/simple.grit`, `examples/variables.grit`, `examples/functions.grit`, or `examples/control-flow.grit` and rerunning the CLI
 - Look at the tests in `tests/` for more usage examples
 - Explore the parser implementation in `src/parser/parse.rs`

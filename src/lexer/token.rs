@@ -13,6 +13,14 @@ pub enum TokenType {
     Divide,
     Equals,
 
+    // Comparison operators
+    EqualEqual,
+    NotEqual,
+    LessThan,
+    LessThanOrEqual,
+    GreaterThan,
+    GreaterThanOrEqual,
+
     // Delimiters
     LeftParen,
     RightParen,
@@ -23,6 +31,10 @@ pub enum TokenType {
 
     // Keywords
     Fn,
+    If,
+    Elif,
+    Else,
+    While,
 
     // Special
     Eof,

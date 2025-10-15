@@ -11,6 +11,20 @@ pub enum Statement {
     /// Variable assignment: identifier = expression
     Assignment { name: String, value: Expr },
 
+    /// If statement with optional elif and else branches
+    If {
+        condition: Expr,
+        then_branch: Vec<Statement>,
+        elif_branches: Vec<(Expr, Vec<Statement>)>,
+        else_branch: Option<Vec<Statement>>,
+    },
+
+    /// While loop
+    While {
+        condition: Expr,
+        body: Vec<Statement>,
+    },
+
     /// Expression statement
     Expression(Expr),
 }
@@ -54,12 +68,25 @@ pub enum BinaryOperator {
     Subtract,
     Multiply,
     Divide,
+    // Comparison operators
+    EqualEqual,
+    NotEqual,
+    LessThan,
+    LessThanOrEqual,
+    GreaterThan,
+    GreaterThanOrEqual,
 }
 
 impl BinaryOperator {
     /// Returns the precedence of the operator (higher = binds tighter)
     pub fn precedence(&self) -> u8 {
         match self {
+            BinaryOperator::EqualEqual
+            | BinaryOperator::NotEqual
+            | BinaryOperator::LessThan
+            | BinaryOperator::LessThanOrEqual
+            | BinaryOperator::GreaterThan
+            | BinaryOperator::GreaterThanOrEqual => 0,
             BinaryOperator::Add | BinaryOperator::Subtract => 1,
             BinaryOperator::Multiply | BinaryOperator::Divide => 2,
         }
@@ -73,6 +100,12 @@ impl std::fmt::Display for BinaryOperator {
             BinaryOperator::Subtract => write!(f, "-"),
             BinaryOperator::Multiply => write!(f, "*"),
             BinaryOperator::Divide => write!(f, "/"),
+            BinaryOperator::EqualEqual => write!(f, "=="),
+            BinaryOperator::NotEqual => write!(f, "!="),
+            BinaryOperator::LessThan => write!(f, "<"),
+            BinaryOperator::LessThanOrEqual => write!(f, "<="),
+            BinaryOperator::GreaterThan => write!(f, ">"),
+            BinaryOperator::GreaterThanOrEqual => write!(f, ">="),
         }
     }
 }
@@ -88,6 +121,22 @@ impl std::fmt::Display for Statement {
                 write!(f, "fn {}({})", name, params.join(", "))
             }
             Statement::Assignment { name, value } => write!(f, "{} = {}", name, value),
+            Statement::If {
+                condition,
+                then_branch: _,
+                elif_branches,
+                else_branch,
+            } => {
+                write!(f, "if {}", condition)?;
+                if !elif_branches.is_empty() {
+                    write!(f, " + {} elif(s)", elif_branches.len())?;
+                }
+                if else_branch.is_some() {
+                    write!(f, " + else")?;
+                }
+                Ok(())
+            }
+            Statement::While { condition, body: _ } => write!(f, "while {}", condition),
             Statement::Expression(expr) => write!(f, "{}", expr),
         }
     }

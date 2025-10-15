@@ -105,6 +105,14 @@ impl Parser {
             if token.token_type == TokenType::Fn {
                 return self.parse_function_def();
             }
+            // Check if this is an if statement
+            if token.token_type == TokenType::If {
+                return self.parse_if_statement();
+            }
+            // Check if this is a while loop
+            if token.token_type == TokenType::While {
+                return self.parse_while_statement();
+            }
         }
 
         // Check if this is an assignment (identifier = expression)
@@ -282,6 +290,234 @@ impl Parser {
         Ok(Statement::FunctionDef { name, params, body })
     }
 
+    /// Parses an if statement with optional elif and else branches
+    fn parse_if_statement(&mut self) -> ParseResult<Statement> {
+        // Consume 'if'
+        self.advance();
+
+        // Parse condition
+        let condition = self.parse_expression(0)?;
+
+        // Skip newlines before '{'
+        self.skip_newlines();
+
+        // Expect '{'
+        if let Some(token) = self.current_token() {
+            if token.token_type != TokenType::LeftBrace {
+                return Err(ParseError::UnexpectedToken {
+                    expected: "'{'".to_string(),
+                    found: token.clone(),
+                });
+            }
+            self.advance();
+        } else {
+            return Err(ParseError::UnexpectedEof {
+                expected: "'{'".to_string(),
+            });
+        }
+
+        // Parse then branch
+        let mut then_branch = Vec::new();
+        self.skip_newlines();
+
+        loop {
+            if let Some(token) = self.current_token() {
+                if token.token_type == TokenType::RightBrace {
+                    self.advance();
+                    break;
+                }
+
+                let stmt = self.parse_statement()?;
+                then_branch.push(stmt);
+                self.skip_newlines();
+            } else {
+                return Err(ParseError::UnexpectedEof {
+                    expected: "'}'".to_string(),
+                });
+            }
+        }
+
+        // Parse optional elif branches
+        let mut elif_branches = Vec::new();
+        self.skip_newlines();
+
+        while let Some(token) = self.current_token() {
+            if token.token_type == TokenType::Elif {
+                self.advance();
+
+                // Parse elif condition
+                let elif_condition = self.parse_expression(0)?;
+
+                // Skip newlines before '{'
+                self.skip_newlines();
+
+                // Expect '{'
+                if let Some(token) = self.current_token() {
+                    if token.token_type != TokenType::LeftBrace {
+                        return Err(ParseError::UnexpectedToken {
+                            expected: "'{'".to_string(),
+                            found: token.clone(),
+                        });
+                    }
+                    self.advance();
+                } else {
+                    return Err(ParseError::UnexpectedEof {
+                        expected: "'{'".to_string(),
+                    });
+                }
+
+                // Parse elif body
+                let mut elif_body = Vec::new();
+                self.skip_newlines();
+
+                loop {
+                    if let Some(token) = self.current_token() {
+                        if token.token_type == TokenType::RightBrace {
+                            self.advance();
+                            break;
+                        }
+
+                        let stmt = self.parse_statement()?;
+                        elif_body.push(stmt);
+                        self.skip_newlines();
+                    } else {
+                        return Err(ParseError::UnexpectedEof {
+                            expected: "'}'".to_string(),
+                        });
+                    }
+                }
+
+                elif_branches.push((elif_condition, elif_body));
+                self.skip_newlines();
+            } else {
+                break;
+            }
+        }
+
+        // Parse optional else branch
+        let else_branch = if let Some(token) = self.current_token() {
+            if token.token_type == TokenType::Else {
+                self.advance();
+
+                // Skip newlines before '{'
+                self.skip_newlines();
+
+                // Expect '{'
+                if let Some(token) = self.current_token() {
+                    if token.token_type != TokenType::LeftBrace {
+                        return Err(ParseError::UnexpectedToken {
+                            expected: "'{'".to_string(),
+                            found: token.clone(),
+                        });
+                    }
+                    self.advance();
+                } else {
+                    return Err(ParseError::UnexpectedEof {
+                        expected: "'{'".to_string(),
+                    });
+                }
+
+                // Parse else body
+                let mut else_body = Vec::new();
+                self.skip_newlines();
+
+                loop {
+                    if let Some(token) = self.current_token() {
+                        if token.token_type == TokenType::RightBrace {
+                            self.advance();
+                            break;
+                        }
+
+                        let stmt = self.parse_statement()?;
+                        else_body.push(stmt);
+                        self.skip_newlines();
+                    } else {
+                        return Err(ParseError::UnexpectedEof {
+                            expected: "'}'".to_string(),
+                        });
+                    }
+                }
+
+                Some(else_body)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        // Consume optional newline after if statement
+        if let Some(token) = self.current_token() {
+            if token.token_type == TokenType::Newline {
+                self.advance();
+            }
+        }
+
+        Ok(Statement::If {
+            condition,
+            then_branch,
+            elif_branches,
+            else_branch,
+        })
+    }
+
+    /// Parses a while loop
+    fn parse_while_statement(&mut self) -> ParseResult<Statement> {
+        // Consume 'while'
+        self.advance();
+
+        // Parse condition
+        let condition = self.parse_expression(0)?;
+
+        // Skip newlines before '{'
+        self.skip_newlines();
+
+        // Expect '{'
+        if let Some(token) = self.current_token() {
+            if token.token_type != TokenType::LeftBrace {
+                return Err(ParseError::UnexpectedToken {
+                    expected: "'{'".to_string(),
+                    found: token.clone(),
+                });
+            }
+            self.advance();
+        } else {
+            return Err(ParseError::UnexpectedEof {
+                expected: "'{'".to_string(),
+            });
+        }
+
+        // Parse body
+        let mut body = Vec::new();
+        self.skip_newlines();
+
+        loop {
+            if let Some(token) = self.current_token() {
+                if token.token_type == TokenType::RightBrace {
+                    self.advance();
+                    break;
+                }
+
+                let stmt = self.parse_statement()?;
+                body.push(stmt);
+                self.skip_newlines();
+            } else {
+                return Err(ParseError::UnexpectedEof {
+                    expected: "'}'".to_string(),
+                });
+            }
+        }
+
+        // Consume optional newline after while statement
+        if let Some(token) = self.current_token() {
+            if token.token_type == TokenType::Newline {
+                self.advance();
+            }
+        }
+
+        Ok(Statement::While { condition, body })
+    }
+
     /// Legacy method for parsing a single expression (for backwards compatibility)
     pub fn parse_expression_only(&mut self) -> ParseResult<Expr> {
         self.parse_expression(0)
@@ -398,6 +634,12 @@ impl Parser {
             TokenType::Minus => Some(BinaryOperator::Subtract),
             TokenType::Multiply => Some(BinaryOperator::Multiply),
             TokenType::Divide => Some(BinaryOperator::Divide),
+            TokenType::EqualEqual => Some(BinaryOperator::EqualEqual),
+            TokenType::NotEqual => Some(BinaryOperator::NotEqual),
+            TokenType::LessThan => Some(BinaryOperator::LessThan),
+            TokenType::LessThanOrEqual => Some(BinaryOperator::LessThanOrEqual),
+            TokenType::GreaterThan => Some(BinaryOperator::GreaterThan),
+            TokenType::GreaterThanOrEqual => Some(BinaryOperator::GreaterThanOrEqual),
             _ => None,
         }
     }

@@ -11,24 +11,31 @@ Currently, Grit supports:
   - Integer literals
   - String literals (single-quoted)
   - Identifiers
-  - Keywords: `fn`
+  - Keywords: `fn`, `if`, `elif`, `else`, `while`
   - Arithmetic operators: `+`, `-`, `*`, `/`
+  - Comparison operators: `==`, `!=`, `<`, `<=`, `>`, `>=`
   - Assignment operator: `=`
   - Parentheses for grouping expressions
-  - Braces for function bodies
+  - Braces for function bodies and control flow blocks
   - Commas for function arguments
 - **Parsing**: Building Abstract Syntax Trees (AST)
   - Variable assignments
   - Variable references
   - Function definitions with parameters
   - Function calls
-  - Operator precedence (multiplication/division before addition/subtraction)
+  - If/elif/else conditional statements
+  - While loops
+  - Comparison expressions
+  - Operator precedence (comparison < arithmetic)
   - Left-to-right associativity
   - Parentheses for overriding precedence
 - **Code Generation**: Transpiling Grit ASTs into Rust source code
   - Function definitions with typed parameters
   - Implicit returns (last expression in function body)
   - Variable declarations (`let` statements)
+  - If/elif/else statements (transpile to Rust if/else if/else)
+  - While loops
+  - Comparison operations
   - Expression statements
   - `print()` function transpiles to `println!()` macro
   - Format string conversion (`%d` → `{}`, `%s` → `{}`)
@@ -63,7 +70,8 @@ grit/
 ├── examples/             # Example Grit programs
 │   ├── simple.grit       # Simple arithmetic example
 │   ├── variables.grit    # Variable assignment and print() example
-│   └── functions.grit    # User-defined functions example
+│   ├── functions.grit    # User-defined functions example
+│   └── control-flow.grit # Control flow (if/elif/else) example
 ├── .github/
 │   └── workflows/
 │       └── ci.yml        # GitHub Actions CI workflow
@@ -98,10 +106,11 @@ cargo test --test parser_tests         # Parser and AST (17 tests)
 cargo test --test cli_tests            # CLI integration (8 tests)
 cargo test --test run_function_tests   # Library run() function (9 tests)
 cargo test --test function_tests       # Function definitions and calls (24 tests)
+cargo test --test control_flow_tests  # Control flow statements (20 tests)
 cargo test --lib                       # Library unit tests (38 tests)
 ```
 
-**Total: 189 tests** covering tokenization, parsing, AST, code generation, functions, error handling, edge cases, and CLI functionality.
+**Total: 209 tests** covering tokenization, parsing, AST, code generation, functions, control flow, error handling, edge cases, and CLI functionality.
 
 ### Running Code Coverage Locally
 
@@ -300,6 +309,51 @@ The transpiler:
 - Places user functions before the `main()` function
 - Allows calling user-defined functions from main code
 
+### Control Flow Example
+
+Given a file `examples/control-flow.grit`:
+
+```grit
+a = 1
+b = 2
+
+if a < b {
+  print('a < b')
+} elif b < a {
+  print('b < a')
+} else {
+  print('a == b')
+}
+```
+
+Running the program:
+
+```bash
+cargo run -- examples/control-flow.grit
+```
+
+Output (generated Rust code):
+
+```rust
+fn main() {
+    let a = 1;
+    let b = 2;
+    if a < b {
+        println!("a < b");
+    } else if b < a {
+        println!("b < a");
+    } else {
+        println!("a == b");
+    }
+}
+```
+
+The transpiler supports:
+- **If/elif/else statements**: Grit's `elif` transpiles to Rust's `else if`
+- **Comparison operators**: `==`, `!=`, `<`, `<=`, `>`, `>=`
+- **While loops**: Standard while loop syntax
+- **Proper indentation**: Generated Rust code is properly formatted
+
 ## Continuous Integration
 
 The project uses GitHub Actions for continuous integration. On every push and pull request to the `main` branch, the workflow will:
@@ -359,7 +413,11 @@ Continuous integration builds the book on every push to `main` and publishes the
   - [x] Function bodies with multiple statements
   - [x] Implicit returns (last expression in function body)
   - [x] Function calls with arguments
-- [ ] Support for control flow (if/else, loops)
+- [x] Support for control flow
+  - [x] If/elif/else conditional statements
+  - [x] While loops
+  - [x] Comparison operators (`==`, `!=`, `<`, `<=`, `>`, `>=`)
+  - [x] Proper code generation with indentation
 - [ ] Type system
 - [ ] Standard library
 

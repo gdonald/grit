@@ -142,6 +142,10 @@ impl Tokenizer {
                     let identifier = self.read_identifier();
                     let token_type = match identifier.as_str() {
                         "fn" => TokenType::Fn,
+                        "if" => TokenType::If,
+                        "elif" => TokenType::Elif,
+                        "else" => TokenType::Else,
+                        "while" => TokenType::While,
                         _ => TokenType::Identifier(identifier),
                     };
                     Token::new(token_type, line, column)
@@ -155,7 +159,45 @@ impl Tokenizer {
                         '-' => TokenType::Minus,
                         '*' => TokenType::Multiply,
                         '/' => TokenType::Divide,
-                        '=' => TokenType::Equals,
+                        '=' => {
+                            // Check for ==
+                            if self.current_char() == Some('=') {
+                                self.advance();
+                                TokenType::EqualEqual
+                            } else {
+                                TokenType::Equals
+                            }
+                        }
+                        '!' => {
+                            // Check for !=
+                            if self.current_char() == Some('=') {
+                                self.advance();
+                                TokenType::NotEqual
+                            } else {
+                                panic!(
+                                    "Unexpected character '{}' at line {}, column {}",
+                                    ch, line, column
+                                )
+                            }
+                        }
+                        '<' => {
+                            // Check for <=
+                            if self.current_char() == Some('=') {
+                                self.advance();
+                                TokenType::LessThanOrEqual
+                            } else {
+                                TokenType::LessThan
+                            }
+                        }
+                        '>' => {
+                            // Check for >=
+                            if self.current_char() == Some('=') {
+                                self.advance();
+                                TokenType::GreaterThanOrEqual
+                            } else {
+                                TokenType::GreaterThan
+                            }
+                        }
                         '(' => TokenType::LeftParen,
                         ')' => TokenType::RightParen,
                         '{' => TokenType::LeftBrace,
