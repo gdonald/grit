@@ -146,6 +146,8 @@ impl Tokenizer {
                         "elif" => TokenType::Elif,
                         "else" => TokenType::Else,
                         "while" => TokenType::While,
+                        "class" => TokenType::Class,
+                        "self" => TokenType::Self_,
                         _ => TokenType::Identifier(identifier),
                     };
                     Token::new(token_type, line, column)
@@ -203,6 +205,7 @@ impl Tokenizer {
                         '{' => TokenType::LeftBrace,
                         '}' => TokenType::RightBrace,
                         ',' => TokenType::Comma,
+                        '.' => TokenType::Dot,
                         '\n' => TokenType::Newline,
                         _ => {
                             panic!(

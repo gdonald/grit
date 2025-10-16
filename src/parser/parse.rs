@@ -100,10 +100,16 @@ impl Parser {
 
     /// Parses a single statement
     fn parse_statement(&mut self) -> ParseResult<Statement> {
+        // Check if this is a class definition
+        if let Some(token) = self.current_token() {
+            if token.token_type == TokenType::Class {
+                return self.parse_class_def();
+            }
+        }
         // Check if this is a function definition
         if let Some(token) = self.current_token() {
             if token.token_type == TokenType::Fn {
-                return self.parse_function_def();
+                return self.parse_function_or_method_def();
             }
             // Check if this is an if statement
             if token.token_type == TokenType::If {
@@ -115,8 +121,9 @@ impl Parser {
             }
         }
 
-        // Check if this is an assignment (identifier = expression)
+        // Check if this is an assignment (identifier = expression or self.field = expression)
         if let Some(token) = self.current_token() {
+            // Handle simple identifier assignment
             if let TokenType::Identifier(name) = &token.token_type {
                 let name = name.clone();
                 // Look ahead to see if there's an equals sign
@@ -140,6 +147,44 @@ impl Parser {
                     }
                 }
             }
+
+            // Handle self.field assignment
+            if token.token_type == TokenType::Self_ {
+                // Check if we have self.field = value
+                if self.position + 1 < self.tokens.len() {
+                    if let Some(dot_token) = self.tokens.get(self.position + 1) {
+                        if dot_token.token_type == TokenType::Dot {
+                            if let Some(field_token) = self.tokens.get(self.position + 2) {
+                                if let TokenType::Identifier(field) = &field_token.token_type {
+                                    let field = field.clone();
+                                    if let Some(equals_token) = self.tokens.get(self.position + 3) {
+                                        if equals_token.token_type == TokenType::Equals {
+                                            // This is a self.field assignment
+                                            self.advance(); // consume 'self'
+                                            self.advance(); // consume '.'
+                                            self.advance(); // consume field name
+                                            self.advance(); // consume '='
+                                            let value = self.parse_expression(0)?;
+
+                                            // Consume optional newline
+                                            if let Some(token) = self.current_token() {
+                                                if token.token_type == TokenType::Newline {
+                                                    self.advance();
+                                                }
+                                            }
+
+                                            return Ok(Statement::Assignment {
+                                                name: format!("self.{}", field),
+                                                value,
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // Otherwise, parse as expression statement
@@ -155,12 +200,12 @@ impl Parser {
         Ok(Statement::Expression(expr))
     }
 
-    /// Parses a function definition: fn name(param1, param2, ...) { body }
-    fn parse_function_def(&mut self) -> ParseResult<Statement> {
-        // Consume 'fn' keyword
+    /// Parses a class definition: class Name
+    fn parse_class_def(&mut self) -> ParseResult<Statement> {
+        // Consume 'class' keyword
         self.advance();
 
-        // Parse function name
+        // Parse class name
         let name = if let Some(token) = self.current_token() {
             if let TokenType::Identifier(name) = &token.token_type {
                 let name = name.clone();
@@ -168,17 +213,106 @@ impl Parser {
                 name
             } else {
                 return Err(ParseError::UnexpectedToken {
-                    expected: "function name".to_string(),
+                    expected: "class name".to_string(),
                     found: token.clone(),
                 });
             }
         } else {
             return Err(ParseError::UnexpectedEof {
-                expected: "function name".to_string(),
+                expected: "class name".to_string(),
             });
         };
 
-        // Expect '('
+        // Consume optional newline after class definition
+        if let Some(token) = self.current_token() {
+            if token.token_type == TokenType::Newline {
+                self.advance();
+            }
+        }
+
+        Ok(Statement::ClassDef { name })
+    }
+
+    /// Parses a function or method definition
+    /// fn name(params) { body } or fn ClassName > methodName(params) { body }
+    fn parse_function_or_method_def(&mut self) -> ParseResult<Statement> {
+        // Consume 'fn' keyword
+        self.advance();
+
+        // Parse first identifier (function name or class name)
+        let first_name = if let Some(token) = self.current_token() {
+            if let TokenType::Identifier(name) = &token.token_type {
+                let name = name.clone();
+                self.advance();
+                name
+            } else {
+                return Err(ParseError::UnexpectedToken {
+                    expected: "function or class name".to_string(),
+                    found: token.clone(),
+                });
+            }
+        } else {
+            return Err(ParseError::UnexpectedEof {
+                expected: "function or class name".to_string(),
+            });
+        };
+
+        // Check if this is a method definition (look for '>')
+        if let Some(token) = self.current_token() {
+            if token.token_type == TokenType::GreaterThan {
+                // This is a method definition (using > as arrow)
+                self.advance(); // consume '>'
+
+                // Parse method name
+                let method_name = if let Some(token) = self.current_token() {
+                    if let TokenType::Identifier(name) = &token.token_type {
+                        let name = name.clone();
+                        self.advance();
+                        name
+                    } else {
+                        return Err(ParseError::UnexpectedToken {
+                            expected: "method name".to_string(),
+                            found: token.clone(),
+                        });
+                    }
+                } else {
+                    return Err(ParseError::UnexpectedEof {
+                        expected: "method name".to_string(),
+                    });
+                };
+
+                let class_name = first_name;
+                let (params, body) = self.parse_function_params_and_body()?;
+
+                return Ok(Statement::MethodDef {
+                    class_name,
+                    method_name,
+                    params,
+                    body,
+                });
+            }
+        }
+
+        // This is a regular function definition
+        let name = first_name;
+        let (params, body) = self.parse_function_params_and_body()?;
+
+        Ok(Statement::FunctionDef { name, params, body })
+    }
+
+    /// Parses function parameters and body (shared by functions and methods)
+    fn parse_function_params_and_body(&mut self) -> ParseResult<(Vec<String>, Vec<Statement>)> {
+        // Check if there's a '(' - if not, skip parameter parsing
+        if let Some(token) = self.current_token() {
+            if token.token_type != TokenType::LeftParen {
+                // No parameters, skip to body parsing
+                self.skip_newlines();
+                let body = self.parse_function_body()?;
+                return Ok((Vec::new(), body));
+            }
+        }
+
+        // Expect '(' (we know it's there from the check above)
         if let Some(token) = self.current_token() {
             if token.token_type != TokenType::LeftParen {
                 return Err(ParseError::UnexpectedToken {
@@ -244,6 +378,13 @@ impl Parser {
         // Skip newlines before '{'
         self.skip_newlines();
 
+        let body = self.parse_function_body()?;
+
+        Ok((params, body))
+    }
+
+    /// Parses a function body (the statements between { and })
+    fn parse_function_body(&mut self) -> ParseResult<Vec<Statement>> {
         // Expect '{'
         if let Some(token) = self.current_token() {
             if token.token_type != TokenType::LeftBrace {
@@ -287,7 +428,7 @@ impl Parser {
             }
         }
 
-        Ok(Statement::FunctionDef { name, params, body })
+        Ok(body)
     }
 
     /// Parses an if statement with optional elif and else branches
@@ -542,6 +683,10 @@ impl Parser {
                 self.advance();
                 Ok(Expr::String(value))
             }
+            TokenType::Self_ => {
+                self.advance();
+                Ok(Expr::Identifier("self".to_string()))
+            }
             TokenType::Identifier(name) => {
                 let name = name.clone();
                 self.advance();
@@ -659,6 +804,87 @@ impl Parser {
                 TokenType::Newline | TokenType::Comma | TokenType::RightParen
             ) {
                 break;
+            }
+
+            // Handle dot operator for field access and method calls (highest precedence)
+            if token.token_type == TokenType::Dot {
+                self.advance(); // consume '.'
+
+                // Parse the field or method name
+                let field = if let Some(token) = self.current_token() {
+                    if let TokenType::Identifier(name) = &token.token_type {
+                        let name = name.clone();
+                        self.advance();
+                        name
+                    } else {
+                        return Err(ParseError::UnexpectedToken {
+                            expected: "field or method name".to_string(),
+                            found: token.clone(),
+                        });
+                    }
+                } else {
+                    return Err(ParseError::UnexpectedEof {
+                        expected: "field or method name".to_string(),
+                    });
+                };
+
+                // Check if this is a method call (has parentheses)
+                let mut args = Vec::new();
+                if let Some(token) = self.current_token() {
+                    if token.token_type == TokenType::LeftParen {
+                        self.advance(); // consume '('
+
+                        // Parse arguments
+                        if let Some(token) = self.current_token() {
+                            if token.token_type != TokenType::RightParen {
+                                loop {
+                                    args.push(self.parse_expression(0)?);
+
+                                    if let Some(token) = self.current_token() {
+                                        if token.token_type == TokenType::Comma {
+                                            self.advance(); // consume ','
+                                            continue;
+                                        } else if token.token_type == TokenType::RightParen {
+                                            break;
+                                        } else {
+                                            return Err(ParseError::UnexpectedToken {
+                                                expected: "',' or ')'".to_string(),
+                                                found: token.clone(),
+                                            });
+                                        }
+                                    } else {
+                                        return Err(ParseError::UnexpectedEof {
+                                            expected: "')'".to_string(),
+                                        });
+                                    }
+                                }
+                            }
+                        }
+
+                        let token =
+                            self.current_token()
+                                .ok_or_else(|| ParseError::UnexpectedEof {
+                                    expected: "')'".to_string(),
+                                })?;
+
+                        if token.token_type != TokenType::RightParen {
+                            return Err(ParseError::UnexpectedToken {
+                                expected: "')'".to_string(),
+                                found: token.clone(),
+                            });
+                        }
+
+                        self.advance(); // consume ')'
+                    }
+                }
+
+                // In Grit, obj.method is always a method call (with or without parens)
+                left = Expr::MethodCall {
+                    object: Box::new(left),
+                    method: field,
+                    args,
+                };
+                continue;
             }
 
             let op = match Self::token_to_operator(&token.token_type) {

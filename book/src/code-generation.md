@@ -182,3 +182,85 @@ All comparison operators are directly mapped to Rust equivalents:
 - `<=` → `<=`
 - `>` → `>`
 - `>=` → `>=`
+
+## Classes
+
+Grit classes are transpiled to Rust structs with `impl` blocks.
+
+### Class Definition
+
+```grit
+class Point
+```
+
+Transpiles to:
+
+```rust
+#[derive(Clone)]
+struct Point {
+    // fields discovered from constructor
+}
+```
+
+### Constructors
+
+Methods named `new` are treated as constructors that return `Self`:
+
+```grit
+fn Point > new(x, y) {
+  self.x = x
+  self.y = y
+}
+```
+
+Transpiles to:
+
+```rust
+fn new(x: i64, y: i64) -> Self {
+    Self {
+        x: x,
+        y: y,
+    }
+}
+```
+
+The code generator:
+1. Scans all methods to discover instance fields (from `self.field` assignments)
+2. Generates a struct with those fields (all typed as `i64`)
+3. Creates an `impl` block with all methods
+4. Treats `new` methods specially as constructors returning `Self`
+
+### Regular Methods
+
+```grit
+fn Point > distance {
+  (x * x + y * y)
+}
+```
+
+Transpiles to:
+
+```rust
+fn distance(&self) -> i64 {
+    self.x * self.x + self.y * self.y
+}
+```
+
+Simple identifiers in method bodies are automatically prefixed with `self.` to reference instance fields.
+
+### Method Calls
+
+```grit
+p = Point.new(3, 4)
+d = p.distance
+```
+
+Transpiles to:
+
+```rust
+let p = Point::new(3, 4);
+let d = p.distance();
+```
+
+- Static method calls (on class names starting with uppercase) use `::`
+- Instance method calls use `.` and automatically add `()` if needed

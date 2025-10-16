@@ -8,6 +8,17 @@ pub enum Statement {
         body: Vec<Statement>,
     },
 
+    /// Class definition: class Name
+    ClassDef { name: String },
+
+    /// Method definition: fn ClassName > methodName(params) { body }
+    MethodDef {
+        class_name: String,
+        method_name: String,
+        params: Vec<String>,
+        body: Vec<Statement>,
+    },
+
     /// Variable assignment: identifier = expression
     Assignment { name: String, value: Expr },
 
@@ -53,6 +64,16 @@ pub enum Expr {
 
     /// Function call: function_name(arg1, arg2, ...)
     FunctionCall { name: String, args: Vec<Expr> },
+
+    /// Field access: object.field or self.field
+    FieldAccess { object: Box<Expr>, field: String },
+
+    /// Method call: object.method(args) or ClassName.method(args)
+    MethodCall {
+        object: Box<Expr>,
+        method: String,
+        args: Vec<Expr>,
+    },
 }
 
 /// Program is a list of statements
@@ -120,6 +141,21 @@ impl std::fmt::Display for Statement {
             } => {
                 write!(f, "fn {}({})", name, params.join(", "))
             }
+            Statement::ClassDef { name } => write!(f, "class {}", name),
+            Statement::MethodDef {
+                class_name,
+                method_name,
+                params,
+                body: _,
+            } => {
+                write!(
+                    f,
+                    "fn {} > {}({})",
+                    class_name,
+                    method_name,
+                    params.join(", ")
+                )
+            }
             Statement::Assignment { name, value } => write!(f, "{} = {}", name, value),
             Statement::If {
                 condition,
@@ -154,6 +190,21 @@ impl std::fmt::Display for Expr {
             Expr::Grouped(expr) => write!(f, "({})", expr),
             Expr::FunctionCall { name, args } => {
                 write!(f, "{}(", name)?;
+                for (i, arg) in args.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    write!(f, "{}", arg)?;
+                }
+                write!(f, ")")
+            }
+            Expr::FieldAccess { object, field } => write!(f, "{}.{}", object, field),
+            Expr::MethodCall {
+                object,
+                method,
+                args,
+            } => {
+                write!(f, "{}.{}(", object, method)?;
                 for (i, arg) in args.iter().enumerate() {
                     if i > 0 {
                         write!(f, ", ")?;

@@ -66,12 +66,16 @@ grit/
 │   ├── next_token_tests.rs      # Direct next_token() method tests
 │   ├── parser_tests.rs          # Parser and AST tests
 │   ├── cli_tests.rs             # CLI integration tests
-│   └── run_function_tests.rs    # Library run() function tests
+│   ├── run_function_tests.rs    # Library run() function tests
+│   ├── function_tests.rs        # Function definition and call tests
+│   ├── control_flow_tests.rs    # Control flow statement tests
+│   └── class_tests.rs           # Class definition and method tests
 ├── examples/             # Example Grit programs
 │   ├── simple.grit       # Simple arithmetic example
 │   ├── variables.grit    # Variable assignment and print() example
 │   ├── functions.grit    # User-defined functions example
-│   └── control-flow.grit # Control flow (if/elif/else) example
+│   ├── control-flow.grit # Control flow (if/elif/else) example
+│   └── classes.grit      # Class definitions and methods example
 ├── .github/
 │   └── workflows/
 │       └── ci.yml        # GitHub Actions CI workflow
@@ -107,10 +111,11 @@ cargo test --test cli_tests            # CLI integration (8 tests)
 cargo test --test run_function_tests   # Library run() function (9 tests)
 cargo test --test function_tests       # Function definitions and calls (24 tests)
 cargo test --test control_flow_tests  # Control flow statements (20 tests)
+cargo test --test class_tests         # Class definitions and methods (10 tests)
 cargo test --lib                       # Library unit tests (38 tests)
 ```
 
-**Total: 209 tests** covering tokenization, parsing, AST, code generation, functions, control flow, error handling, edge cases, and CLI functionality.
+**Total: 219 tests** covering tokenization, parsing, AST, code generation, functions, control flow, classes, error handling, edge cases, and CLI functionality.
 
 ### Running Code Coverage Locally
 
@@ -354,6 +359,62 @@ The transpiler supports:
 - **While loops**: Standard while loop syntax
 - **Proper indentation**: Generated Rust code is properly formatted
 
+### Classes Example
+
+Given a file `examples/classes.grit`:
+
+```grit
+class Foo
+
+fn Foo > new {
+  self.a = 1
+  self.b = 2
+}
+
+fn Foo > add {
+  a + b
+}
+
+f = Foo.new
+```
+
+Output (generated Rust code):
+
+```rust
+#[derive(Clone)]
+struct Foo {
+    a: i64,
+    b: i64,
+}
+
+impl Foo {
+    fn new() -> Self {
+        Self {
+            a: 1,
+            b: 2,
+        }
+    }
+
+    fn add(&self) -> i64 {
+        self.a + self.b
+    }
+}
+
+fn main() {
+    let f = Foo::new();
+}
+```
+
+The transpiler supports:
+- **Class definitions**: `class ClassName` declares a new class
+- **Methods**: Defined with `fn ClassName > methodName(params) { body }` syntax
+- **Constructors**: Methods named `new` are treated as constructors
+- **Instance fields**: Assigned via `self.field = value` in constructors
+- **Field references**: Simple identifiers in methods automatically reference `self.field`
+- **Method calls**: Both `obj.method()` and `obj.method` work for zero-argument methods
+- **Static calls**: `ClassName.new()` transpiles to `ClassName::new()`
+- **Rust structs**: Grit classes transpile to Rust structs with `impl` blocks
+
 ## Continuous Integration
 
 The project uses GitHub Actions for continuous integration. On every push and pull request to the `main` branch, the workflow will:
@@ -418,6 +479,14 @@ Continuous integration builds the book on every push to `main` and publishes the
   - [x] While loops
   - [x] Comparison operators (`==`, `!=`, `<`, `<=`, `>`, `>=`)
   - [x] Proper code generation with indentation
+- [x] Simple classes
+  - [x] Class definitions (`class ClassName`)
+  - [x] Methods with `fn ClassName > methodName(params) { body }` syntax
+  - [x] Constructor support (methods named `new`)
+  - [x] Instance fields via `self.field` assignments
+  - [x] Method calls with and without parentheses
+  - [x] Static method calls (`ClassName.method()` → `ClassName::method()`)
+  - [x] Transpilation to Rust structs and impl blocks
 - [ ] Type system
 - [ ] Standard library
 

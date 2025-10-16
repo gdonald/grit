@@ -170,8 +170,106 @@ fn main() {
 }
 ```
 
+## Classes
+
+Grit supports simple object-oriented programming with classes:
+
+```grit
+class Point
+
+fn Point > new(x, y) {
+  self.x = x
+  self.y = y
+}
+
+fn Point > distance {
+  (x * x + y * y)
+}
+
+p = Point.new(3, 4)
+```
+
+### Class definitions
+
+Use the `class` keyword to declare a class:
+
+```grit
+class ClassName
+```
+
+### Methods
+
+Methods are defined using the `fn ClassName > methodName` syntax:
+
+```grit
+fn ClassName > methodName(param1, param2) {
+  # method body
+}
+```
+
+### Constructors
+
+Methods named `new` are treated as constructors and should initialize instance fields:
+
+```grit
+fn Point > new(x, y) {
+  self.x = x
+  self.y = y
+}
+```
+
+### Instance fields
+
+Fields are created by assigning to `self.field` in the constructor. In method bodies, simple identifiers automatically reference instance fields:
+
+```grit
+fn Point > distance {
+  # 'x' and 'y' automatically refer to self.x and self.y
+  (x * x + y * y)
+}
+```
+
+### Method calls
+
+Methods can be called with or without parentheses (for zero-argument methods):
+
+```grit
+p = Point.new(3, 4)   # Constructor call
+d = p.distance        # Method call without parentheses
+d2 = p.distance()     # Method call with parentheses (same as above)
+```
+
+### Generated Rust code
+
+Grit classes transpile to Rust structs with `impl` blocks:
+
+```rust
+#[derive(Clone)]
+struct Point {
+    x: i64,
+    y: i64,
+}
+
+impl Point {
+    fn new(x: i64, y: i64) -> Self {
+        Self {
+            x: x,
+            y: y,
+        }
+    }
+
+    fn distance(&self) -> i64 {
+        self.x * self.x + self.y * self.y
+    }
+}
+
+fn main() {
+    let p = Point::new(3, 4);
+}
+```
+
 ## Next steps
 
-- Try editing `examples/simple.grit`, `examples/variables.grit`, `examples/functions.grit`, or `examples/control-flow.grit` and rerunning the CLI
+- Try editing `examples/simple.grit`, `examples/variables.grit`, `examples/functions.grit`, `examples/control-flow.grit`, or `examples/classes.grit` and rerunning the CLI
 - Look at the tests in `tests/` for more usage examples
 - Explore the parser implementation in `src/parser/parse.rs`

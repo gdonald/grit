@@ -1,0 +1,31 @@
+
+class Foo
+
+fn Foo > new {
+  self.a = 1
+  self.b = 2
+}
+
+fn Foo > add {
+  a + b
+}
+
+f = Foo.new
+
+print('f.add: ', f.add)
+
+
+class Bar
+
+fn Bar > new(c, d) {
+  self.c = c
+  self.d = d
+}
+
+fn Bar > sub {
+  c - d
+}
+
+b = Bar.new(4, 3)
+
+print('b.sub: ', b.sub)

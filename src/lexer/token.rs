@@ -28,6 +28,7 @@ pub enum TokenType {
     RightBrace,
     Comma,
     Newline,
+    Dot,
 
     // Keywords
     Fn,
@@ -35,6 +36,8 @@ pub enum TokenType {
     Elif,
     Else,
     While,
+    Class,
+    Self_,
 
     // Special
     Eof,

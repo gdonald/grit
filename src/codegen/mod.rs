@@ -27,12 +27,64 @@ impl CodeGenerator {
         let mut code = String::new();
         let mut main_body = String::new();
 
+        // Collect classes and their methods
+        use std::collections::HashMap;
+        let mut classes: HashMap<String, Vec<&Statement>> = HashMap::new();
+
+        for stmt in &program.statements {
+            match stmt {
+                Statement::ClassDef { name } => {
+                    classes.entry(name.clone()).or_default();
+                }
+                Statement::MethodDef { class_name, .. } => {
+                    classes.entry(class_name.clone()).or_default().push(stmt);
+                }
+                _ => {}
+            }
+        }
+
+        // Generate structs and impl blocks for each class
+        for (class_name, methods) in &classes {
+            // Collect all field names from all methods
+            let mut fields = std::collections::HashSet::new();
+            for method in methods {
+                if let Statement::MethodDef { body, .. } = method {
+                    Self::collect_fields(body, &mut fields);
+                }
+            }
+
+            // Generate struct
+            code.push_str(&format!("#[derive(Clone)]\nstruct {} {{\n", class_name));
+            for field in &fields {
+                code.push_str(&format!("    {}: i64,\n", field));
+            }
+            code.push_str("}\n\n");
+
+            // Generate impl block
+            code.push_str(&format!("impl {} {{\n", class_name));
+            for method in methods {
+                if let Statement::MethodDef {
+                    method_name,
+                    params,
+                    body,
+                    ..
+                } = method
+                {
+                    code.push_str(&Self::generate_method_impl(method_name, params, body));
+                }
+            }
+            code.push_str("}\n\n");
+        }
+
         // Separate functions from main body statements
         for stmt in &program.statements {
             match stmt {
                 Statement::FunctionDef { .. } => {
                     code.push_str(&Self::generate_statement(stmt));
                     code.push('\n');
+                }
+                Statement::ClassDef { .. } | Statement::MethodDef { .. } => {
+                    // Already handled above
                 }
                 _ => {
                     main_body.push_str("    ");
@@ -54,6 +106,17 @@ impl CodeGenerator {
             Statement::FunctionDef { name, params, body } => {
                 Self::generate_function_def(name, params, body)
             }
+            Statement::ClassDef { name } => {
+                // Class definitions themselves don't generate code
+                // They're used to track class names for struct generation
+                format!("// class {}", name)
+            }
+            Statement::MethodDef {
+                class_name,
+                method_name,
+                params,
+                body,
+            } => Self::generate_method_def(class_name, method_name, params, body),
             Statement::Assignment { name, value } => {
                 format!("let {} = {};", name, Self::generate_expression(value))
             }
@@ -249,6 +312,34 @@ impl CodeGenerator {
                     .join(", ");
                 format!("{}({})", name, args_str)
             }
+            Expr::FieldAccess { object, field } => {
+                let object_str = Self::generate_expression_with_context(object, None, false);
+                format!("{}.{}", object_str, field)
+            }
+            Expr::MethodCall {
+                object,
+                method,
+                args,
+            } => {
+                let object_str = Self::generate_expression_with_context(object, None, false);
+                let args_str = args
+                    .iter()
+                    .map(|arg| Self::generate_expression_with_context(arg, None, false))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+
+                // Check if this is a static method call (ClassName.method)
+                // If object is an identifier that starts with uppercase, treat as static
+                if let Expr::Identifier(class_name) = &**object {
+                    if class_name.chars().next().is_some_and(|c| c.is_uppercase()) {
+                        // Static method call: ClassName::method(args)
+                        return format!("{}::{}({})", class_name, method, args_str);
+                    }
+                }
+
+                // Instance method call: obj.method(args)
+                format!("{}.{}({})", object_str, method, args_str)
+            }
         }
     }
 
@@ -264,6 +355,178 @@ impl CodeGenerator {
             BinaryOperator::LessThanOrEqual => "<=",
             BinaryOperator::GreaterThan => ">",
             BinaryOperator::GreaterThanOrEqual => ">=",
+        }
+    }
+
+    /// Collects all field names from self.field assignments
+    fn collect_fields(body: &[Statement], fields: &mut std::collections::HashSet<String>) {
+        for stmt in body {
+            match stmt {
+                Statement::Assignment { name, .. } => {
+                    // Check if this is a self.field assignment (self.field = ...)
+                    if name.starts_with("self.") {
+                        if let Some(field) = name.strip_prefix("self.") {
+                            fields.insert(field.to_string());
+                        }
+                    }
+                }
+                Statement::If {
+                    then_branch,
+                    elif_branches,
+                    else_branch,
+                    ..
+                } => {
+                    Self::collect_fields(then_branch, fields);
+                    for (_, branch) in elif_branches {
+                        Self::collect_fields(branch, fields);
+                    }
+                    if let Some(else_body) = else_branch {
+                        Self::collect_fields(else_body, fields);
+                    }
+                }
+                Statement::While { body, .. } => {
+                    Self::collect_fields(body, fields);
+                }
+                Statement::Expression(Expr::FieldAccess { object, field }) => {
+                    if let Expr::Identifier(obj_name) = &**object {
+                        if obj_name == "self" {
+                            fields.insert(field.clone());
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    /// Generates code for a method definition (not used directly, kept for compatibility)
+    fn generate_method_def(
+        _class_name: &str,
+        _method_name: &str,
+        _params: &[String],
+        _body: &[Statement],
+    ) -> String {
+        // This is not used in the new approach but kept for compatibility
+        String::new()
+    }
+
+    /// Generates code for a method implementation (inside impl block)
+    fn generate_method_impl(method_name: &str, params: &[String], body: &[Statement]) -> String {
+        let mut code = String::new();
+
+        // Special handling for constructor (new method)
+        if method_name == "new" {
+            let params_str = params.join(": i64, ");
+            let params_with_types = if params.is_empty() {
+                String::new()
+            } else {
+                format!("{}: i64", params_str)
+            };
+
+            code.push_str(&format!(
+                "    fn {}({}) -> Self {{\n",
+                method_name, params_with_types
+            ));
+
+            // Collect field assignments
+            let mut field_assignments = Vec::new();
+            for stmt in body {
+                if let Statement::Assignment { name, value } = stmt {
+                    // Check if this is self.field = value
+                    if name.starts_with("self.") {
+                        let field = name.strip_prefix("self.").unwrap();
+                        let value_str = Self::generate_expression(value);
+                        field_assignments.push((field.to_string(), value_str));
+                    }
+                }
+            }
+
+            // Generate Self construction
+            code.push_str("        Self {\n");
+            for (field, value) in &field_assignments {
+                code.push_str(&format!("            {}: {},\n", field, value));
+            }
+            code.push_str("        }\n");
+            code.push_str("    }\n\n");
+        } else {
+            // Regular method
+            let params_str = params.join(": i64, ");
+            let params_with_types = if params.is_empty() {
+                "&self".to_string()
+            } else {
+                format!("&self, {}: i64", params_str)
+            };
+
+            code.push_str(&format!(
+                "    fn {}({}) -> i64 {{\n",
+                method_name, params_with_types
+            ));
+
+            // Check if the last statement is an expression (implicit return)
+            let has_implicit_return = if let Some(last) = body.last() {
+                matches!(last, Statement::Expression(_))
+            } else {
+                false
+            };
+
+            for (i, stmt) in body.iter().enumerate() {
+                let is_last = i == body.len() - 1;
+
+                // Skip self.field assignments (they're handled in the constructor)
+                if let Statement::Assignment { name, .. } = stmt {
+                    if name.starts_with("self.") {
+                        continue;
+                    }
+                }
+
+                code.push_str("        ");
+
+                // Convert field references: a -> self.a, b -> self.b
+                let stmt_code = Self::generate_statement_with_self(stmt);
+
+                if is_last && has_implicit_return {
+                    // Last expression should be returned
+                    if let Statement::Expression(_) = stmt {
+                        code.push_str(stmt_code.trim_end_matches(';'));
+                    } else {
+                        code.push_str(&stmt_code);
+                    }
+                } else {
+                    code.push_str(&stmt_code);
+                }
+                code.push('\n');
+            }
+
+            code.push_str("    }\n\n");
+        }
+
+        code
+    }
+
+    /// Generates a statement with self. prefix for field references
+    fn generate_statement_with_self(stmt: &Statement) -> String {
+        match stmt {
+            Statement::Expression(expr) => {
+                format!("{};", Self::generate_expression_with_self(expr))
+            }
+            _ => Self::generate_statement(stmt),
+        }
+    }
+
+    /// Generates an expression with self. prefix for simple identifiers (field references)
+    fn generate_expression_with_self(expr: &Expr) -> String {
+        match expr {
+            Expr::Identifier(name) if name != "self" => format!("self.{}", name),
+            Expr::BinaryOp { left, op, right } => {
+                let left_str = Self::generate_expression_with_self(left);
+                let right_str = Self::generate_expression_with_self(right);
+                format!("{} {} {}", left_str, Self::op_symbol(op), right_str)
+            }
+            Expr::FieldAccess { object, field } => {
+                let object_str = Self::generate_expression_with_self(object);
+                format!("{}.{}", object_str, field)
+            }
+            _ => Self::generate_expression(expr),
         }
     }
 }
