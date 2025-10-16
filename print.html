@@ -317,9 +317,78 @@ while x &lt; 5 {
         let x = x + 1;
     }
 }</code></pre></pre>
+<h2 id="classes"><a class="header" href="#classes">Classes</a></h2>
+<p>Grit supports simple object-oriented programming with classes:</p>
+<pre><code class="language-grit">class Point
+
+fn Point &gt; new(x, y) {
+  self.x = x
+  self.y = y
+}
+
+fn Point &gt; distance {
+  (x * x + y * y)
+}
+
+p = Point.new(3, 4)
+</code></pre>
+<h3 id="class-definitions"><a class="header" href="#class-definitions">Class definitions</a></h3>
+<p>Use the <code>class</code> keyword to declare a class:</p>
+<pre><code class="language-grit">class ClassName
+</code></pre>
+<h3 id="methods"><a class="header" href="#methods">Methods</a></h3>
+<p>Methods are defined using the <code>fn ClassName &gt; methodName</code> syntax:</p>
+<pre><code class="language-grit">fn ClassName &gt; methodName(param1, param2) {
+  # method body
+}
+</code></pre>
+<h3 id="constructors"><a class="header" href="#constructors">Constructors</a></h3>
+<p>Methods named <code>new</code> are treated as constructors and should initialize instance fields:</p>
+<pre><code class="language-grit">fn Point &gt; new(x, y) {
+  self.x = x
+  self.y = y
+}
+</code></pre>
+<h3 id="instance-fields"><a class="header" href="#instance-fields">Instance fields</a></h3>
+<p>Fields are created by assigning to <code>self.field</code> in the constructor. In method bodies, simple identifiers automatically reference instance fields:</p>
+<pre><code class="language-grit">fn Point &gt; distance {
+  # 'x' and 'y' automatically refer to self.x and self.y
+  (x * x + y * y)
+}
+</code></pre>
+<h3 id="method-calls"><a class="header" href="#method-calls">Method calls</a></h3>
+<p>Methods can be called with or without parentheses (for zero-argument methods):</p>
+<pre><code class="language-grit">p = Point.new(3, 4)   # Constructor call
+d = p.distance        # Method call without parentheses
+d2 = p.distance()     # Method call with parentheses (same as above)
+</code></pre>
+<h3 id="generated-rust-code"><a class="header" href="#generated-rust-code">Generated Rust code</a></h3>
+<p>Grit classes transpile to Rust structs with <code>impl</code> blocks:</p>
+<pre><pre class="playground"><code class="language-rust">#[derive(Clone)]
+struct Point {
+    x: i64,
+    y: i64,
+}
+
+impl Point {
+    fn new(x: i64, y: i64) -&gt; Self {
+        Self {
+            x: x,
+            y: y,
+        }
+    }
+
+    fn distance(&amp;self) -&gt; i64 {
+        self.x * self.x + self.y * self.y
+    }
+}
+
+fn main() {
+    let p = Point::new(3, 4);
+}</code></pre></pre>
 <h2 id="next-steps"><a class="header" href="#next-steps">Next steps</a></h2>
 <ul>
-<li>Try editing <code>examples/simple.grit</code>, <code>examples/variables.grit</code>, <code>examples/functions.grit</code>, or <code>examples/control-flow.grit</code> and rerunning the CLI</li>
+<li>Try editing <code>examples/simple.grit</code>, <code>examples/variables.grit</code>, <code>examples/functions.grit</code>, <code>examples/control-flow.grit</code>, or <code>examples/classes.grit</code> and rerunning the CLI</li>
 <li>Look at the tests in <code>tests/</code> for more usage examples</li>
 <li>Explore the parser implementation in <code>src/parser/parse.rs</code></li>
 </ul>
@@ -462,6 +531,70 @@ while counter &lt; 5 {
 <li><code>&lt;=</code> → <code>&lt;=</code></li>
 <li><code>&gt;</code> → <code>&gt;</code></li>
 <li><code>&gt;=</code> → <code>&gt;=</code></li>
+</ul>
+<h2 id="classes-1"><a class="header" href="#classes-1">Classes</a></h2>
+<p>Grit classes are transpiled to Rust structs with <code>impl</code> blocks.</p>
+<h3 id="class-definition"><a class="header" href="#class-definition">Class Definition</a></h3>
+<pre><code class="language-grit">class Point
+</code></pre>
+<p>Transpiles to:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Clone)]
+struct Point {
+    // fields discovered from constructor
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="constructors-1"><a class="header" href="#constructors-1">Constructors</a></h3>
+<p>Methods named <code>new</code> are treated as constructors that return <code>Self</code>:</p>
+<pre><code class="language-grit">fn Point &gt; new(x, y) {
+  self.x = x
+  self.y = y
+}
+</code></pre>
+<p>Transpiles to:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn new(x: i64, y: i64) -&gt; Self {
+    Self {
+        x: x,
+        y: y,
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>The code generator:</p>
+<ol>
+<li>Scans all methods to discover instance fields (from <code>self.field</code> assignments)</li>
+<li>Generates a struct with those fields (all typed as <code>i64</code>)</li>
+<li>Creates an <code>impl</code> block with all methods</li>
+<li>Treats <code>new</code> methods specially as constructors returning <code>Self</code></li>
+</ol>
+<h3 id="regular-methods"><a class="header" href="#regular-methods">Regular Methods</a></h3>
+<pre><code class="language-grit">fn Point &gt; distance {
+  (x * x + y * y)
+}
+</code></pre>
+<p>Transpiles to:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn distance(&amp;self) -&gt; i64 {
+    self.x * self.x + self.y * self.y
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Simple identifiers in method bodies are automatically prefixed with <code>self.</code> to reference instance fields.</p>
+<h3 id="method-calls-1"><a class="header" href="#method-calls-1">Method Calls</a></h3>
+<pre><code class="language-grit">p = Point.new(3, 4)
+d = p.distance
+</code></pre>
+<p>Transpiles to:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let p = Point::new(3, 4);
+let d = p.distance();
+<span class="boring">}</span></code></pre></pre>
+<ul>
+<li>Static method calls (on class names starting with uppercase) use <code>::</code></li>
+<li>Instance method calls use <code>.</code> and automatically add <code>()</code> if needed</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="tooling"><a class="header" href="#tooling">Tooling</a></h1>
 <h2 id="building-the-docs"><a class="header" href="#building-the-docs">Building the Docs</a></h2>

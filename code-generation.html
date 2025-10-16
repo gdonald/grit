@@ -318,6 +318,70 @@ while counter &lt; 5 {
 <li><code>&gt;</code> → <code>&gt;</code></li>
 <li><code>&gt;=</code> → <code>&gt;=</code></li>
 </ul>
+<h2 id="classes"><a class="header" href="#classes">Classes</a></h2>
+<p>Grit classes are transpiled to Rust structs with <code>impl</code> blocks.</p>
+<h3 id="class-definition"><a class="header" href="#class-definition">Class Definition</a></h3>
+<pre><code class="language-grit">class Point
+</code></pre>
+<p>Transpiles to:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[derive(Clone)]
+struct Point {
+    // fields discovered from constructor
+}
+<span class="boring">}</span></code></pre></pre>
+<h3 id="constructors"><a class="header" href="#constructors">Constructors</a></h3>
+<p>Methods named <code>new</code> are treated as constructors that return <code>Self</code>:</p>
+<pre><code class="language-grit">fn Point &gt; new(x, y) {
+  self.x = x
+  self.y = y
+}
+</code></pre>
+<p>Transpiles to:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn new(x: i64, y: i64) -&gt; Self {
+    Self {
+        x: x,
+        y: y,
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>The code generator:</p>
+<ol>
+<li>Scans all methods to discover instance fields (from <code>self.field</code> assignments)</li>
+<li>Generates a struct with those fields (all typed as <code>i64</code>)</li>
+<li>Creates an <code>impl</code> block with all methods</li>
+<li>Treats <code>new</code> methods specially as constructors returning <code>Self</code></li>
+</ol>
+<h3 id="regular-methods"><a class="header" href="#regular-methods">Regular Methods</a></h3>
+<pre><code class="language-grit">fn Point &gt; distance {
+  (x * x + y * y)
+}
+</code></pre>
+<p>Transpiles to:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>fn distance(&amp;self) -&gt; i64 {
+    self.x * self.x + self.y * self.y
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Simple identifiers in method bodies are automatically prefixed with <code>self.</code> to reference instance fields.</p>
+<h3 id="method-calls"><a class="header" href="#method-calls">Method Calls</a></h3>
+<pre><code class="language-grit">p = Point.new(3, 4)
+d = p.distance
+</code></pre>
+<p>Transpiles to:</p>
+<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let p = Point::new(3, 4);
+let d = p.distance();
+<span class="boring">}</span></code></pre></pre>
+<ul>
+<li>Static method calls (on class names starting with uppercase) use <code>::</code></li>
+<li>Instance method calls use <code>.</code> and automatically add <code>()</code> if needed</li>
+</ul>
 
                     </main>
 

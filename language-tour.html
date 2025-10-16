@@ -306,9 +306,78 @@ while x &lt; 5 {
         let x = x + 1;
     }
 }</code></pre></pre>
+<h2 id="classes"><a class="header" href="#classes">Classes</a></h2>
+<p>Grit supports simple object-oriented programming with classes:</p>
+<pre><code class="language-grit">class Point
+
+fn Point &gt; new(x, y) {
+  self.x = x
+  self.y = y
+}
+
+fn Point &gt; distance {
+  (x * x + y * y)
+}
+
+p = Point.new(3, 4)
+</code></pre>
+<h3 id="class-definitions"><a class="header" href="#class-definitions">Class definitions</a></h3>
+<p>Use the <code>class</code> keyword to declare a class:</p>
+<pre><code class="language-grit">class ClassName
+</code></pre>
+<h3 id="methods"><a class="header" href="#methods">Methods</a></h3>
+<p>Methods are defined using the <code>fn ClassName &gt; methodName</code> syntax:</p>
+<pre><code class="language-grit">fn ClassName &gt; methodName(param1, param2) {
+  # method body
+}
+</code></pre>
+<h3 id="constructors"><a class="header" href="#constructors">Constructors</a></h3>
+<p>Methods named <code>new</code> are treated as constructors and should initialize instance fields:</p>
+<pre><code class="language-grit">fn Point &gt; new(x, y) {
+  self.x = x
+  self.y = y
+}
+</code></pre>
+<h3 id="instance-fields"><a class="header" href="#instance-fields">Instance fields</a></h3>
+<p>Fields are created by assigning to <code>self.field</code> in the constructor. In method bodies, simple identifiers automatically reference instance fields:</p>
+<pre><code class="language-grit">fn Point &gt; distance {
+  # 'x' and 'y' automatically refer to self.x and self.y
+  (x * x + y * y)
+}
+</code></pre>
+<h3 id="method-calls"><a class="header" href="#method-calls">Method calls</a></h3>
+<p>Methods can be called with or without parentheses (for zero-argument methods):</p>
+<pre><code class="language-grit">p = Point.new(3, 4)   # Constructor call
+d = p.distance        # Method call without parentheses
+d2 = p.distance()     # Method call with parentheses (same as above)
+</code></pre>
+<h3 id="generated-rust-code"><a class="header" href="#generated-rust-code">Generated Rust code</a></h3>
+<p>Grit classes transpile to Rust structs with <code>impl</code> blocks:</p>
+<pre><pre class="playground"><code class="language-rust">#[derive(Clone)]
+struct Point {
+    x: i64,
+    y: i64,
+}
+
+impl Point {
+    fn new(x: i64, y: i64) -&gt; Self {
+        Self {
+            x: x,
+            y: y,
+        }
+    }
+
+    fn distance(&amp;self) -&gt; i64 {
+        self.x * self.x + self.y * self.y
+    }
+}
+
+fn main() {
+    let p = Point::new(3, 4);
+}</code></pre></pre>
 <h2 id="next-steps"><a class="header" href="#next-steps">Next steps</a></h2>
 <ul>
-<li>Try editing <code>examples/simple.grit</code>, <code>examples/variables.grit</code>, <code>examples/functions.grit</code>, or <code>examples/control-flow.grit</code> and rerunning the CLI</li>
+<li>Try editing <code>examples/simple.grit</code>, <code>examples/variables.grit</code>, <code>examples/functions.grit</code>, <code>examples/control-flow.grit</code>, or <code>examples/classes.grit</code> and rerunning the CLI</li>
 <li>Look at the tests in <code>tests/</code> for more usage examples</li>
 <li>Explore the parser implementation in <code>src/parser/parse.rs</code></li>
 </ul>
