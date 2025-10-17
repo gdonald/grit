@@ -262,3 +262,129 @@ fn test_generate_print_with_non_string_format() {
     // When first arg is not a string, it becomes the format, with no values to print
     assert!(code.contains("println!(\"{}\");"));
 }
+
+// Tests moved from src/codegen/mod.rs
+
+fn assert_expression(expected: &str, expr: Expr) {
+    let generated = CodeGenerator::generate_expression(&expr);
+    assert_eq!(generated, expected);
+}
+
+#[test]
+fn test_generate_integer_expression() {
+    assert_expression("42", Expr::Integer(42));
+}
+
+#[test]
+fn test_generate_addition_expression() {
+    assert_expression(
+        "1 + 2",
+        Expr::BinaryOp {
+            left: Box::new(Expr::Integer(1)),
+            op: BinaryOperator::Add,
+            right: Box::new(Expr::Integer(2)),
+        },
+    );
+}
+
+#[test]
+fn test_generate_multiplication_expression() {
+    assert_expression(
+        "3 * 4",
+        Expr::BinaryOp {
+            left: Box::new(Expr::Integer(3)),
+            op: BinaryOperator::Multiply,
+            right: Box::new(Expr::Integer(4)),
+        },
+    );
+}
+
+#[test]
+fn test_generate_expression_respects_precedence() {
+    assert_expression(
+        "1 + 2 * 3",
+        Expr::BinaryOp {
+            left: Box::new(Expr::Integer(1)),
+            op: BinaryOperator::Add,
+            right: Box::new(Expr::BinaryOp {
+                left: Box::new(Expr::Integer(2)),
+                op: BinaryOperator::Multiply,
+                right: Box::new(Expr::Integer(3)),
+            }),
+        },
+    );
+}
+
+#[test]
+fn test_generate_expression_respects_associativity() {
+    assert_expression(
+        "1 - (2 - 3)",
+        Expr::BinaryOp {
+            left: Box::new(Expr::Integer(1)),
+            op: BinaryOperator::Subtract,
+            right: Box::new(Expr::BinaryOp {
+                left: Box::new(Expr::Integer(2)),
+                op: BinaryOperator::Subtract,
+                right: Box::new(Expr::Integer(3)),
+            }),
+        },
+    );
+}
+
+#[test]
+fn test_generate_expression_with_grouping() {
+    assert_expression(
+        "(1 + 2) * 3",
+        Expr::BinaryOp {
+            left: Box::new(Expr::Grouped(Box::new(Expr::BinaryOp {
+                left: Box::new(Expr::Integer(1)),
+                op: BinaryOperator::Add,
+                right: Box::new(Expr::Integer(2)),
+            }))),
+            op: BinaryOperator::Multiply,
+            right: Box::new(Expr::Integer(3)),
+        },
+    );
+}
+
+#[test]
+fn test_generate_expression_parenthesizes_lower_precedence_left_child() {
+    assert_expression(
+        "(1 + 2) * 3",
+        Expr::BinaryOp {
+            left: Box::new(Expr::BinaryOp {
+                left: Box::new(Expr::Integer(1)),
+                op: BinaryOperator::Add,
+                right: Box::new(Expr::Integer(2)),
+            }),
+            op: BinaryOperator::Multiply,
+            right: Box::new(Expr::Integer(3)),
+        },
+    );
+}
+
+#[test]
+fn test_generate_expression_parenthesizes_lower_precedence_right_child() {
+    assert_expression(
+        "3 / (1 + 2)",
+        Expr::BinaryOp {
+            left: Box::new(Expr::Integer(3)),
+            op: BinaryOperator::Divide,
+            right: Box::new(Expr::BinaryOp {
+                left: Box::new(Expr::Integer(1)),
+                op: BinaryOperator::Add,
+                right: Box::new(Expr::Integer(2)),
+            }),
+        },
+    );
+}
+
+#[test]
+fn test_generate_program_wraps_single_expression() {
+    let program = Program {
+        statements: vec![Statement::Expression(Expr::Integer(5))],
+    };
+    let rust_code = CodeGenerator::generate_program(&program);
+    let expected = "fn main() {\n    let result = 5;\n    println!(\"{}\", result);\n}\n";
+    assert_eq!(rust_code, expected);
+}
