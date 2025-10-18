@@ -46,6 +46,9 @@ pub enum Expr {
     /// Integer literal
     Integer(i64),
 
+    /// Float literal
+    Float(f64),
+
     /// String literal
     String(String),
 
@@ -182,6 +185,7 @@ impl std::fmt::Display for Expr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Expr::Integer(n) => write!(f, "{}", n),
+            Expr::Float(n) => write!(f, "{}", n),
             Expr::String(s) => write!(f, "'{}'", s),
             Expr::Identifier(id) => write!(f, "{}", id),
             Expr::BinaryOp { left, op, right } => {

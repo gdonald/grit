@@ -28,6 +28,16 @@ impl Tokenizer {
         }
     }
 
+    /// Peeks ahead at a character without consuming it
+    fn peek_char(&self, offset: usize) -> Option<char> {
+        let peek_pos = self.position + offset;
+        if peek_pos < self.input.len() {
+            Some(self.input[peek_pos])
+        } else {
+            None
+        }
+    }
+
     /// Advances to the next character and returns it
     ///
     /// # Safety
@@ -109,20 +119,38 @@ impl Tokenizer {
         string
     }
 
-    /// Reads an integer from the input
-    fn read_integer(&mut self) -> i64 {
+    /// Reads a number (integer or float) from the input
+    fn read_number(&mut self) -> TokenType {
         let mut number = String::new();
+        let mut is_float = false;
 
         while let Some(ch) = self.current_char() {
             if ch.is_ascii_digit() {
                 number.push(ch);
                 self.advance();
+            } else if ch == '.' && !is_float {
+                // Check if next character is a digit (to distinguish from method calls)
+                if let Some(next_ch) = self.peek_char(1) {
+                    if next_ch.is_ascii_digit() {
+                        is_float = true;
+                        number.push(ch);
+                        self.advance();
+                    } else {
+                        break;
+                    }
+                } else {
+                    break;
+                }
             } else {
                 break;
             }
         }
 
-        number.parse().unwrap_or(0)
+        if is_float {
+            TokenType::Float(number.parse().unwrap_or(0.0))
+        } else {
+            TokenType::Integer(number.parse().unwrap_or(0))
+        }
     }
 
     /// Returns the next token from the input
@@ -136,8 +164,8 @@ impl Tokenizer {
             None => Token::new(TokenType::Eof, line, column),
             Some(ch) => {
                 if ch.is_ascii_digit() {
-                    let number = self.read_integer();
-                    Token::new(TokenType::Integer(number), line, column)
+                    let token_type = self.read_number();
+                    Token::new(token_type, line, column)
                 } else if ch.is_alphabetic() || ch == '_' {
                     let identifier = self.read_identifier();
                     let token_type = match identifier.as_str() {

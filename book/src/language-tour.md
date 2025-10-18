@@ -65,6 +65,82 @@ fn main() {
 
 The `print()` function is a built-in that transpiles to Rust's `println!()` macro. Format specifiers like `%d` (integer) and `%s` (string) are automatically converted to Rust's `{}` placeholder syntax.
 
+## Type System
+
+Grit supports three primitive types: integers (`i64`), floats (`f64`), and strings (`String`).
+
+### Integers
+
+Integer literals are whole numbers:
+
+```grit
+x = 42
+y = -10
+```
+
+### Floats
+
+Float literals contain a decimal point:
+
+```grit
+pi = 3.14
+temp = 98.6
+ratio = 2.5
+```
+
+### Strings
+
+String literals use single quotes:
+
+```grit
+name = 'Alice'
+message = 'Hello, World!'
+```
+
+### Type Conversions
+
+Grit provides built-in functions for converting between types:
+
+```grit
+x = 42
+y = 3.14
+z = 'hello'
+
+# Convert to float
+a = to_float(x)        # 42.0
+
+# Convert to integer (truncates)
+b = to_int(y)          # 3
+
+# Convert to string
+c = to_string(x)       # "42"
+d = to_string(y)       # "3.14"
+```
+
+This transpiles to Rust code using type casts and `.to_string()` method:
+
+```rust
+fn main() {
+    let x = 42;
+    let y = 3.14;
+    let z = "hello";
+    let a = (x as f64);
+    let b = (y as i64);
+    let c = x.to_string();
+    let d = y.to_string();
+}
+```
+
+### Mixed-type Arithmetic
+
+You can mix integers and floats in expressions, following Rust's type coercion rules:
+
+```grit
+result = 5 + 2.5       # Integer + Float = requires explicit conversion in Rust
+```
+
+**Note**: In the current implementation, mixing types may require explicit conversions to compile correctly in the generated Rust code.
+
 ## User-Defined Functions
 
 You can define your own functions with the `fn` keyword:

@@ -678,6 +678,11 @@ impl Parser {
                 self.advance();
                 Ok(Expr::Integer(value))
             }
+            TokenType::Float(n) => {
+                let value = *n;
+                self.advance();
+                Ok(Expr::Float(value))
+            }
             TokenType::String(s) => {
                 let value = s.clone();
                 self.advance();

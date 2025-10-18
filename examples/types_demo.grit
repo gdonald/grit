@@ -1,0 +1,19 @@
+x = 42
+y = 3.14
+z = 'hello'
+
+print('Integer: %d', x)
+print('Float: %s', y)
+print('String: %s', z)
+
+a = to_float(x)
+print('Int to float: %s', a)
+
+b = to_int(y)
+print('Float to int: %d', b)
+
+c = to_string(x)
+print('Int to string: %s', c)
+
+d = to_string(y)
+print('Float to string: %s', d)

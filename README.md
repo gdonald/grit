@@ -8,16 +8,18 @@ A scripting language that transpiles to Rust source code, which then compiles to
 
 Currently, Grit supports:
 - **Tokenization**: Lexical analysis of source code
-  - Integer literals
-  - String literals (single-quoted)
+  - Integer literals (`42`, `-10`)
+  - Float literals (`3.14`, `2.5`)
+  - String literals (single-quoted: `'hello'`)
   - Identifiers
-  - Keywords: `fn`, `if`, `elif`, `else`, `while`
+  - Keywords: `fn`, `if`, `elif`, `else`, `while`, `class`, `self`
   - Arithmetic operators: `+`, `-`, `*`, `/`
   - Comparison operators: `==`, `!=`, `<`, `<=`, `>`, `>=`
   - Assignment operator: `=`
   - Parentheses for grouping expressions
   - Braces for function bodies and control flow blocks
   - Commas for function arguments
+  - Dot operator for field/method access
 - **Parsing**: Building Abstract Syntax Trees (AST)
   - Variable assignments
   - Variable references
@@ -29,6 +31,11 @@ Currently, Grit supports:
   - Operator precedence (comparison < arithmetic)
   - Left-to-right associativity
   - Parentheses for overriding precedence
+- **Type System**: Three primitive types with conversions
+  - Integers (`i64`)
+  - Floats (`f64`)
+  - Strings (`String`)
+  - Type conversion functions: `to_int()`, `to_float()`, `to_string()`
 - **Code Generation**: Transpiling Grit ASTs into Rust source code
   - Function definitions with typed parameters
   - Implicit returns (last expression in function body)
@@ -39,6 +46,7 @@ Currently, Grit supports:
   - Expression statements
   - `print()` function transpiles to `println!()` macro
   - Format string conversion (`%d` → `{}`, `%s` → `{}`)
+  - Type conversions (`to_int(x)` → `(x as i64)`, etc.)
 
 ## Project Structure
 
@@ -69,13 +77,17 @@ grit/
 │   ├── run_function_tests.rs    # Library run() function tests
 │   ├── function_tests.rs        # Function definition and call tests
 │   ├── control_flow_tests.rs    # Control flow statement tests
-│   └── class_tests.rs           # Class definition and method tests
+│   ├── class_tests.rs           # Class definition and method tests
+│   ├── type_system_tests.rs     # Type system and conversion tests
+│   └── ast_tests.rs             # AST Display implementation tests
 ├── examples/             # Example Grit programs
 │   ├── simple.grit       # Simple arithmetic example
 │   ├── variables.grit    # Variable assignment and print() example
 │   ├── functions.grit    # User-defined functions example
 │   ├── control-flow.grit # Control flow (if/elif/else) example
-│   └── classes.grit      # Class definitions and methods example
+│   ├── classes.grit      # Class definitions and methods example
+│   ├── types_demo.grit   # Type system and conversions example
+│   └── point_simple.grit # Class with methods example
 ├── .github/
 │   └── workflows/
 │       └── ci.yml        # GitHub Actions CI workflow
@@ -112,10 +124,12 @@ cargo test --test run_function_tests   # Library run() function (9 tests)
 cargo test --test function_tests       # Function definitions and calls (24 tests)
 cargo test --test control_flow_tests  # Control flow statements (20 tests)
 cargo test --test class_tests         # Class definitions and methods (10 tests)
-cargo test --lib                       # Library unit tests (38 tests)
+cargo test --test type_system_tests   # Type system and conversions (14 tests)
+cargo test --test ast_tests           # AST Display implementations (37 tests)
+cargo test --lib                       # Library unit tests (0 tests)
 ```
 
-**Total: 219 tests** covering tokenization, parsing, AST, code generation, functions, control flow, classes, error handling, edge cases, and CLI functionality.
+**Total: 272 tests** covering tokenization, parsing, AST, code generation, functions, control flow, classes, type system, type conversions, error handling, edge cases, and CLI functionality.
 
 ### Running Code Coverage Locally
 
@@ -415,6 +429,62 @@ The transpiler supports:
 - **Static calls**: `ClassName.new()` transpiles to `ClassName::new()`
 - **Rust structs**: Grit classes transpile to Rust structs with `impl` blocks
 
+### Type System Example
+
+Given a file `examples/types_demo.grit`:
+
+```grit
+x = 42
+y = 3.14
+z = 'hello'
+
+print('Integer: %d', x)
+print('Float: %s', y)
+print('String: %s', z)
+
+a = to_float(x)
+print('Int to float: %s', a)
+
+b = to_int(y)
+print('Float to int: %d', b)
+
+c = to_string(x)
+print('Int to string: %s', c)
+
+d = to_string(y)
+print('Float to string: %s', d)
+```
+
+Output (generated Rust code):
+
+```rust
+fn main() {
+    let x = 42;
+    let y = 3.14;
+    let z = "hello";
+    println!("Integer: {}", x);
+    println!("Float: {}", y);
+    println!("String: {}", z);
+    let a = (x as f64);
+    println!("Int to float: {}", a);
+    let b = (y as i64);
+    println!("Float to int: {}", b);
+    let c = x.to_string();
+    println!("Int to string: {}", c);
+    let d = y.to_string();
+    println!("Float to string: {}", d);
+}
+```
+
+The type system supports:
+- **Three primitive types**: Integers (`i64`), floats (`f64`), and strings (`String`)
+- **Type conversion functions**:
+  - `to_int(value)` - Converts to integer using Rust's `as i64` cast
+  - `to_float(value)` - Converts to float using Rust's `as f64` cast
+  - `to_string(value)` - Converts to string using `.to_string()` method
+- **Float literals**: Decimal point notation (e.g., `3.14`)
+- **Smart parsing**: Distinguishes between float literals (`3.14`) and method calls (`obj.method`)
+
 ## Continuous Integration
 
 The project uses GitHub Actions for continuous integration. On every push and pull request to the `main` branch, the workflow will:
@@ -487,7 +557,14 @@ Continuous integration builds the book on every push to `main` and publishes the
   - [x] Method calls with and without parentheses
   - [x] Static method calls (`ClassName.method()` → `ClassName::method()`)
   - [x] Transpilation to Rust structs and impl blocks
-- [ ] Type system
+- [x] Type system
+  - [x] Integer type (`i64`)
+  - [x] Float type (`f64`)
+  - [x] String type (`String`)
+  - [x] Type conversion functions (`to_int()`, `to_float()`, `to_string()`)
+  - [x] Float literal parsing (distinguishes `3.14` from `obj.method`)
+  - [ ] Type inference for class instance parameters
+  - [ ] Generic types
 - [ ] Standard library
 
 ## License

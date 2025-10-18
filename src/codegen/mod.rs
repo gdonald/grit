@@ -279,6 +279,7 @@ impl CodeGenerator {
     ) -> String {
         match ast {
             Expr::Integer(value) => value.to_string(),
+            Expr::Float(value) => value.to_string(),
             Expr::String(s) => format!("\"{}\"", s.replace("\"", "\\\"")),
             Expr::Identifier(name) => name.clone(),
             Expr::Grouped(expr) => format!(
@@ -305,12 +306,29 @@ impl CodeGenerator {
                 }
             }
             Expr::FunctionCall { name, args } => {
-                let args_str = args
-                    .iter()
-                    .map(|arg| Self::generate_expression_with_context(arg, None, false))
-                    .collect::<Vec<_>>()
-                    .join(", ");
-                format!("{}({})", name, args_str)
+                // Handle type conversion functions
+                match name.as_str() {
+                    "to_int" if args.len() == 1 => {
+                        let arg = Self::generate_expression_with_context(&args[0], None, false);
+                        format!("({} as i64)", arg)
+                    }
+                    "to_float" if args.len() == 1 => {
+                        let arg = Self::generate_expression_with_context(&args[0], None, false);
+                        format!("({} as f64)", arg)
+                    }
+                    "to_string" if args.len() == 1 => {
+                        let arg = Self::generate_expression_with_context(&args[0], None, false);
+                        format!("{}.to_string()", arg)
+                    }
+                    _ => {
+                        let args_str = args
+                            .iter()
+                            .map(|arg| Self::generate_expression_with_context(arg, None, false))
+                            .collect::<Vec<_>>()
+                            .join(", ");
+                        format!("{}({})", name, args_str)
+                    }
+                }
             }
             Expr::FieldAccess { object, field } => {
                 let object_str = Self::generate_expression_with_context(object, None, false);
