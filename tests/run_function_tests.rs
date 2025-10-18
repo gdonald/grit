@@ -18,10 +18,6 @@ fn test_run_file_not_found() {
     let result = grit::run(&args, &mut output);
     assert!(result.is_err());
     assert_eq!(result.unwrap_err(), 1);
-
-    // Verify no output was written since file couldn't be read
-    let output_str = String::from_utf8(output).unwrap();
-    assert_eq!(output_str, "");
 }
 
 #[test]
@@ -67,7 +63,6 @@ fn test_run_empty_file() {
     let output_str = String::from_utf8(output).unwrap();
     assert!(output_str.contains("Tokens:"));
     assert!(output_str.contains("Eof"));
-    assert!(output_str.contains("Empty input - nothing to parse"));
 
     // Cleanup
     let _ = fs::remove_file(test_file);

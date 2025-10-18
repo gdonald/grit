@@ -237,7 +237,10 @@ fn test_tokenize_float_vs_method_call() {
     assert_eq!(tokens.len(), 4);
     assert_eq!(tokens[0].token_type, TokenType::Integer(42));
     assert_eq!(tokens[1].token_type, TokenType::Dot);
-    assert_eq!(tokens[2].token_type, TokenType::Identifier("foo".to_string()));
+    assert_eq!(
+        tokens[2].token_type,
+        TokenType::Identifier("foo".to_string())
+    );
     assert_eq!(tokens[3].token_type, TokenType::Eof);
 }
 
@@ -259,7 +262,10 @@ fn test_tokenize_float_assignment() {
     let tokens = tokenizer.tokenize();
 
     assert_eq!(tokens.len(), 4);
-    assert_eq!(tokens[0].token_type, TokenType::Identifier("pi".to_string()));
+    assert_eq!(
+        tokens[0].token_type,
+        TokenType::Identifier("pi".to_string())
+    );
     assert_eq!(tokens[1].token_type, TokenType::Equals);
     assert_eq!(tokens[2].token_type, TokenType::Float(3.14));
     assert_eq!(tokens[3].token_type, TokenType::Eof);

@@ -119,7 +119,6 @@ fn test_class_definition_eof_after_class_keyword() {
     let mut parser = Parser::new(tokens);
     let result = parser.parse();
     assert!(result.is_err());
-    // Just verify it errors - actual error type may vary
 }
 
 #[test]

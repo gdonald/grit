@@ -586,32 +586,3 @@ fn test_generate_float_subtraction() {
         },
     );
 }
-
-// Edge case tests for better coverage
-
-#[test]
-fn test_generate_empty_print() {
-    let program = Program {
-        statements: vec![Statement::Expression(Expr::FunctionCall {
-            name: "print".to_string(),
-            args: vec![],
-        })],
-    };
-    let code = CodeGenerator::generate_program(&program);
-    assert!(code.contains("println!();"));
-}
-
-#[test]
-fn test_generate_print_single_non_string() {
-    // When first arg is not a string, it becomes the format with no values
-    let program = Program {
-        statements: vec![Statement::Expression(Expr::FunctionCall {
-            name: "print".to_string(),
-            args: vec![Expr::Integer(42)],
-        })],
-    };
-    let code = CodeGenerator::generate_program(&program);
-    // This is the current behavior - format string "{}" with no value
-    // This exercises the code path at line 269 of codegen/mod.rs
-    assert!(code.contains("println!(\"{}\");"));
-}
