@@ -235,6 +235,55 @@ print('c: %d', c)
     println!("c: {}", c);
 }</code></pre></pre>
 <p>The <code>print()</code> function is a built-in that transpiles to Rust's <code>println!()</code> macro. Format specifiers like <code>%d</code> (integer) and <code>%s</code> (string) are automatically converted to Rust's <code>{}</code> placeholder syntax.</p>
+<h2 id="type-system"><a class="header" href="#type-system">Type System</a></h2>
+<p>Grit supports three primitive types: integers (<code>i64</code>), floats (<code>f64</code>), and strings (<code>String</code>).</p>
+<h3 id="integers"><a class="header" href="#integers">Integers</a></h3>
+<p>Integer literals are whole numbers:</p>
+<pre><code class="language-grit">x = 42
+y = -10
+</code></pre>
+<h3 id="floats"><a class="header" href="#floats">Floats</a></h3>
+<p>Float literals contain a decimal point:</p>
+<pre><code class="language-grit">pi = 3.14
+temp = 98.6
+ratio = 2.5
+</code></pre>
+<h3 id="strings"><a class="header" href="#strings">Strings</a></h3>
+<p>String literals use single quotes:</p>
+<pre><code class="language-grit">name = 'Alice'
+message = 'Hello, World!'
+</code></pre>
+<h3 id="type-conversions"><a class="header" href="#type-conversions">Type Conversions</a></h3>
+<p>Grit provides built-in functions for converting between types:</p>
+<pre><code class="language-grit">x = 42
+y = 3.14
+z = 'hello'
+
+# Convert to float
+a = to_float(x)        # 42.0
+
+# Convert to integer (truncates)
+b = to_int(y)          # 3
+
+# Convert to string
+c = to_string(x)       # "42"
+d = to_string(y)       # "3.14"
+</code></pre>
+<p>This transpiles to Rust code using type casts and <code>.to_string()</code> method:</p>
+<pre><pre class="playground"><code class="language-rust">fn main() {
+    let x = 42;
+    let y = 3.14;
+    let z = "hello";
+    let a = (x as f64);
+    let b = (y as i64);
+    let c = x.to_string();
+    let d = y.to_string();
+}</code></pre></pre>
+<h3 id="mixed-type-arithmetic"><a class="header" href="#mixed-type-arithmetic">Mixed-type Arithmetic</a></h3>
+<p>You can mix integers and floats in expressions, following Rust's type coercion rules:</p>
+<pre><code class="language-grit">result = 5 + 2.5       # Integer + Float = requires explicit conversion in Rust
+</code></pre>
+<p><strong>Note</strong>: In the current implementation, mixing types may require explicit conversions to compile correctly in the generated Rust code.</p>
 <h2 id="user-defined-functions"><a class="header" href="#user-defined-functions">User-Defined Functions</a></h2>
 <p>You can define your own functions with the <code>fn</code> keyword:</p>
 <pre><code class="language-grit">fn add(a, b) {
