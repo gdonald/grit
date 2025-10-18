@@ -1,0 +1,14 @@
+class Point
+
+fn Point > new(x, y) {
+  self.x = x
+  self.y = y
+}
+
+fn Point > magnitude() {
+  x * x + y * y
+}
+
+p = Point.new(3, 4)
+m = p.magnitude()
+print('Magnitude squared: %d', m)

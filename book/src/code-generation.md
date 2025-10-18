@@ -232,35 +232,32 @@ The code generator:
 
 ### Regular Methods
 
+**Current Limitation**: Grit does not yet support passing class instances as method parameters. All parameters are typed as `i64`. This means methods like `distance` that should accept another `Point` instance cannot be implemented correctly.
+
+As a workaround, methods can only operate on `self` and primitive parameters:
+
 ```grit
-fn Point > distance {
-  (x * x + y * y)
+fn Point > scale(factor) {
+  self.x = x * factor
+  self.y = y * factor
 }
 ```
 
-Transpiles to:
-
-```rust
-fn distance(&self) -> i64 {
-    self.x * self.x + self.y * self.y
-}
-```
-
-Simple identifiers in method bodies are automatically prefixed with `self.` to reference instance fields.
+**TODO**: Add support for class instance parameters to enable proper distance calculations and other instance-to-instance operations.
 
 ### Method Calls
 
 ```grit
 p = Point.new(3, 4)
-d = p.distance
+p.scale(2)
 ```
 
 Transpiles to:
 
 ```rust
 let p = Point::new(3, 4);
-let d = p.distance();
+p.scale(2);
 ```
 
 - Static method calls (on class names starting with uppercase) use `::`
-- Instance method calls use `.` and automatically add `()` if needed
+- Instance method calls use `.` and pass primitive arguments
