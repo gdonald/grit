@@ -183,3 +183,112 @@ fn test_tokenize_multiline_program() {
         TokenType::Identifier("a".to_string())
     );
 }
+
+// Float tokenization edge case tests
+
+#[test]
+fn test_tokenize_float_zero() {
+    let mut tokenizer = Tokenizer::new("0.0");
+    let tokens = tokenizer.tokenize();
+
+    assert_eq!(tokens.len(), 2);
+    assert_eq!(tokens[0].token_type, TokenType::Float(0.0));
+    assert_eq!(tokens[1].token_type, TokenType::Eof);
+}
+
+#[test]
+fn test_tokenize_float_with_many_decimals() {
+    let mut tokenizer = Tokenizer::new("3.14159265359");
+    let tokens = tokenizer.tokenize();
+
+    assert_eq!(tokens.len(), 2);
+    assert_eq!(tokens[0].token_type, TokenType::Float(3.14159265359));
+    assert_eq!(tokens[1].token_type, TokenType::Eof);
+}
+
+#[test]
+fn test_tokenize_float_starting_with_zero() {
+    let mut tokenizer = Tokenizer::new("0.5");
+    let tokens = tokenizer.tokenize();
+
+    assert_eq!(tokens.len(), 2);
+    assert_eq!(tokens[0].token_type, TokenType::Float(0.5));
+    assert_eq!(tokens[1].token_type, TokenType::Eof);
+}
+
+#[test]
+fn test_tokenize_multiple_floats() {
+    let mut tokenizer = Tokenizer::new("1.5 + 2.3");
+    let tokens = tokenizer.tokenize();
+
+    assert_eq!(tokens.len(), 4);
+    assert_eq!(tokens[0].token_type, TokenType::Float(1.5));
+    assert_eq!(tokens[1].token_type, TokenType::Plus);
+    assert_eq!(tokens[2].token_type, TokenType::Float(2.3));
+    assert_eq!(tokens[3].token_type, TokenType::Eof);
+}
+
+#[test]
+fn test_tokenize_float_vs_method_call() {
+    // "42.foo" should tokenize as Integer, Dot, Identifier
+    let mut tokenizer = Tokenizer::new("42.foo");
+    let tokens = tokenizer.tokenize();
+
+    assert_eq!(tokens.len(), 4);
+    assert_eq!(tokens[0].token_type, TokenType::Integer(42));
+    assert_eq!(tokens[1].token_type, TokenType::Dot);
+    assert_eq!(tokens[2].token_type, TokenType::Identifier("foo".to_string()));
+    assert_eq!(tokens[3].token_type, TokenType::Eof);
+}
+
+#[test]
+fn test_tokenize_float_at_end() {
+    // "42." at end of input should be Integer then Dot
+    let mut tokenizer = Tokenizer::new("42.");
+    let tokens = tokenizer.tokenize();
+
+    assert_eq!(tokens.len(), 3);
+    assert_eq!(tokens[0].token_type, TokenType::Integer(42));
+    assert_eq!(tokens[1].token_type, TokenType::Dot);
+    assert_eq!(tokens[2].token_type, TokenType::Eof);
+}
+
+#[test]
+fn test_tokenize_float_assignment() {
+    let mut tokenizer = Tokenizer::new("pi = 3.14");
+    let tokens = tokenizer.tokenize();
+
+    assert_eq!(tokens.len(), 4);
+    assert_eq!(tokens[0].token_type, TokenType::Identifier("pi".to_string()));
+    assert_eq!(tokens[1].token_type, TokenType::Equals);
+    assert_eq!(tokens[2].token_type, TokenType::Float(3.14));
+    assert_eq!(tokens[3].token_type, TokenType::Eof);
+}
+
+#[test]
+fn test_tokenize_float_in_expression() {
+    let mut tokenizer = Tokenizer::new("2.5 * (1.0 + 3.5)");
+    let tokens = tokenizer.tokenize();
+
+    assert_eq!(tokens.len(), 8);
+    assert_eq!(tokens[0].token_type, TokenType::Float(2.5));
+    assert_eq!(tokens[1].token_type, TokenType::Multiply);
+    assert_eq!(tokens[2].token_type, TokenType::LeftParen);
+    assert_eq!(tokens[3].token_type, TokenType::Float(1.0));
+    assert_eq!(tokens[4].token_type, TokenType::Plus);
+    assert_eq!(tokens[5].token_type, TokenType::Float(3.5));
+    assert_eq!(tokens[6].token_type, TokenType::RightParen);
+    assert_eq!(tokens[7].token_type, TokenType::Eof);
+}
+
+#[test]
+fn test_tokenize_mixed_int_and_float() {
+    let mut tokenizer = Tokenizer::new("5 + 2.5");
+    let tokens = tokenizer.tokenize();
+
+    assert_eq!(tokens.len(), 4);
+    assert_eq!(tokens[0].token_type, TokenType::Integer(5));
+    assert_eq!(tokens[1].token_type, TokenType::Plus);
+    assert_eq!(tokens[2].token_type, TokenType::Float(2.5));
+    assert_eq!(tokens[3].token_type, TokenType::Eof);
+}

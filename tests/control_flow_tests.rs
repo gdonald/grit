@@ -343,3 +343,244 @@ fn test_generate_all_comparison_operators() {
         assert!(code.contains(&format!("a {} b", symbol)));
     }
 }
+
+// Float comparison tests
+
+#[test]
+fn test_parse_float_comparison_greater_than() {
+    let input = "3.14 > 2.5";
+    let mut tokenizer = Tokenizer::new(input);
+    let tokens = tokenizer.tokenize();
+    let mut parser = Parser::new(tokens);
+    let program = parser.parse().unwrap();
+
+    assert_eq!(program.statements.len(), 1);
+    match &program.statements[0] {
+        Statement::Expression(Expr::BinaryOp { left, op, right }) => {
+            assert!(matches!(**left, Expr::Float(3.14)));
+            assert!(matches!(op, BinaryOperator::GreaterThan));
+            assert!(matches!(**right, Expr::Float(2.5)));
+        }
+        _ => panic!("Expected binary comparison"),
+    }
+}
+
+#[test]
+fn test_parse_float_comparison_less_than_or_equal() {
+    let input = "x <= 5.0";
+    let mut tokenizer = Tokenizer::new(input);
+    let tokens = tokenizer.tokenize();
+    let mut parser = Parser::new(tokens);
+    let program = parser.parse().unwrap();
+
+    assert_eq!(program.statements.len(), 1);
+    match &program.statements[0] {
+        Statement::Expression(Expr::BinaryOp { left, op, right }) => {
+            assert!(matches!(**left, Expr::Identifier(_)));
+            assert!(matches!(op, BinaryOperator::LessThanOrEqual));
+            assert!(matches!(**right, Expr::Float(5.0)));
+        }
+        _ => panic!("Expected binary comparison"),
+    }
+}
+
+#[test]
+fn test_parse_float_equality() {
+    let input = "3.14 == 3.14";
+    let mut tokenizer = Tokenizer::new(input);
+    let tokens = tokenizer.tokenize();
+    let mut parser = Parser::new(tokens);
+    let program = parser.parse().unwrap();
+
+    assert_eq!(program.statements.len(), 1);
+    match &program.statements[0] {
+        Statement::Expression(Expr::BinaryOp { left, op, right }) => {
+            assert!(matches!(**left, Expr::Float(3.14)));
+            assert!(matches!(op, BinaryOperator::EqualEqual));
+            assert!(matches!(**right, Expr::Float(3.14)));
+        }
+        _ => panic!("Expected binary comparison"),
+    }
+}
+
+#[test]
+fn test_parse_mixed_int_float_comparison() {
+    let input = "5 < 2.5";
+    let mut tokenizer = Tokenizer::new(input);
+    let tokens = tokenizer.tokenize();
+    let mut parser = Parser::new(tokens);
+    let program = parser.parse().unwrap();
+
+    assert_eq!(program.statements.len(), 1);
+    match &program.statements[0] {
+        Statement::Expression(Expr::BinaryOp { left, op, right }) => {
+            assert!(matches!(**left, Expr::Integer(5)));
+            assert!(matches!(op, BinaryOperator::LessThan));
+            assert!(matches!(**right, Expr::Float(2.5)));
+        }
+        _ => panic!("Expected binary comparison"),
+    }
+}
+
+#[test]
+fn test_generate_if_with_float_comparison() {
+    let program = Program {
+        statements: vec![Statement::If {
+            condition: Expr::BinaryOp {
+                left: Box::new(Expr::Float(3.14)),
+                op: BinaryOperator::GreaterThan,
+                right: Box::new(Expr::Float(2.5)),
+            },
+            then_branch: vec![Statement::Expression(Expr::FunctionCall {
+                name: "print".to_string(),
+                args: vec![Expr::String("greater".to_string())],
+            })],
+            elif_branches: vec![],
+            else_branch: None,
+        }],
+    };
+
+    let code = CodeGenerator::generate_program(&program);
+    assert!(code.contains("if 3.14 > 2.5 {"));
+    assert!(code.contains("println!(\"greater\");"));
+}
+
+#[test]
+fn test_generate_while_with_float_comparison() {
+    let program = Program {
+        statements: vec![Statement::While {
+            condition: Expr::BinaryOp {
+                left: Box::new(Expr::Identifier("x".to_string())),
+                op: BinaryOperator::LessThan,
+                right: Box::new(Expr::Float(10.5)),
+            },
+            body: vec![Statement::Assignment {
+                name: "x".to_string(),
+                value: Expr::BinaryOp {
+                    left: Box::new(Expr::Identifier("x".to_string())),
+                    op: BinaryOperator::Add,
+                    right: Box::new(Expr::Float(0.5)),
+                },
+            }],
+        }],
+    };
+
+    let code = CodeGenerator::generate_program(&program);
+    assert!(code.contains("while x < 10.5 {"));
+    assert!(code.contains("let x = x + 0.5;"));
+}
+
+#[test]
+fn test_generate_if_elif_with_mixed_float_int_comparisons() {
+    let program = Program {
+        statements: vec![Statement::If {
+            condition: Expr::BinaryOp {
+                left: Box::new(Expr::Identifier("x".to_string())),
+                op: BinaryOperator::LessThan,
+                right: Box::new(Expr::Float(5.0)),
+            },
+            then_branch: vec![Statement::Expression(Expr::FunctionCall {
+                name: "print".to_string(),
+                args: vec![Expr::String("less than 5.0".to_string())],
+            })],
+            elif_branches: vec![(
+                Expr::BinaryOp {
+                    left: Box::new(Expr::Identifier("x".to_string())),
+                    op: BinaryOperator::GreaterThan,
+                    right: Box::new(Expr::Integer(10)),
+                },
+                vec![Statement::Expression(Expr::FunctionCall {
+                    name: "print".to_string(),
+                    args: vec![Expr::String("greater than 10".to_string())],
+                })],
+            )],
+            else_branch: Some(vec![Statement::Expression(Expr::FunctionCall {
+                name: "print".to_string(),
+                args: vec![Expr::String("between 5.0 and 10".to_string())],
+            })]),
+        }],
+    };
+
+    let code = CodeGenerator::generate_program(&program);
+    assert!(code.contains("if x < 5 {"));
+    assert!(code.contains("} else if x > 10 {"));
+    assert!(code.contains("println!(\"less than 5.0\");"));
+    assert!(code.contains("println!(\"greater than 10\");"));
+    assert!(code.contains("println!(\"between 5.0 and 10\");"));
+}
+
+#[test]
+fn test_generate_float_comparison_all_operators() {
+    let operators = vec![
+        (BinaryOperator::EqualEqual, "=="),
+        (BinaryOperator::NotEqual, "!="),
+        (BinaryOperator::LessThan, "<"),
+        (BinaryOperator::LessThanOrEqual, "<="),
+        (BinaryOperator::GreaterThan, ">"),
+        (BinaryOperator::GreaterThanOrEqual, ">="),
+    ];
+
+    for (op, symbol) in operators {
+        let program = Program {
+            statements: vec![Statement::Expression(Expr::BinaryOp {
+                left: Box::new(Expr::Float(3.14)),
+                op,
+                right: Box::new(Expr::Float(2.5)),
+            })],
+        };
+
+        let code = CodeGenerator::generate_program(&program);
+        assert!(code.contains(&format!("3.14 {} 2.5", symbol)));
+    }
+}
+
+#[test]
+fn test_generate_nested_float_comparison_in_if() {
+    let program = Program {
+        statements: vec![Statement::If {
+            condition: Expr::BinaryOp {
+                left: Box::new(Expr::BinaryOp {
+                    left: Box::new(Expr::Identifier("x".to_string())),
+                    op: BinaryOperator::Add,
+                    right: Box::new(Expr::Float(1.5)),
+                }),
+                op: BinaryOperator::GreaterThan,
+                right: Box::new(Expr::Float(10.0)),
+            },
+            then_branch: vec![Statement::Expression(Expr::FunctionCall {
+                name: "print".to_string(),
+                args: vec![Expr::String("sum exceeds 10".to_string())],
+            })],
+            elif_branches: vec![],
+            else_branch: None,
+        }],
+    };
+
+    let code = CodeGenerator::generate_program(&program);
+    assert!(code.contains("if x + 1.5 > 10 {") || code.contains("if (x + 1.5) > 10 {"));
+}
+
+#[test]
+fn test_parse_while_with_float_comparison() {
+    let input = "while x < 5.5 { x = x + 0.1 }";
+    let mut tokenizer = Tokenizer::new(input);
+    let tokens = tokenizer.tokenize();
+    let mut parser = Parser::new(tokens);
+    let program = parser.parse().unwrap();
+
+    assert_eq!(program.statements.len(), 1);
+    match &program.statements[0] {
+        Statement::While { condition, body } => {
+            match condition {
+                Expr::BinaryOp { left, op, right } => {
+                    assert!(matches!(**left, Expr::Identifier(_)));
+                    assert!(matches!(op, BinaryOperator::LessThan));
+                    assert!(matches!(**right, Expr::Float(5.5)));
+                }
+                _ => panic!("Expected binary comparison"),
+            }
+            assert_eq!(body.len(), 1);
+        }
+        _ => panic!("Expected while statement"),
+    }
+}
