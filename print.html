@@ -570,31 +570,27 @@ struct Point {
 <li>Treats <code>new</code> methods specially as constructors returning <code>Self</code></li>
 </ol>
 <h3 id="regular-methods"><a class="header" href="#regular-methods">Regular Methods</a></h3>
-<pre><code class="language-grit">fn Point &gt; distance {
-  (x * x + y * y)
+<p><strong>Current Limitation</strong>: Grit does not yet support passing class instances as method parameters. All parameters are typed as <code>i64</code>. This means methods like <code>distance</code> that should accept another <code>Point</code> instance cannot be implemented correctly.</p>
+<p>As a workaround, methods can only operate on <code>self</code> and primitive parameters:</p>
+<pre><code class="language-grit">fn Point &gt; scale(factor) {
+  self.x = x * factor
+  self.y = y * factor
 }
 </code></pre>
-<p>Transpiles to:</p>
-<pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>fn distance(&amp;self) -&gt; i64 {
-    self.x * self.x + self.y * self.y
-}
-<span class="boring">}</span></code></pre></pre>
-<p>Simple identifiers in method bodies are automatically prefixed with <code>self.</code> to reference instance fields.</p>
+<p><strong>TODO</strong>: Add support for class instance parameters to enable proper distance calculations and other instance-to-instance operations.</p>
 <h3 id="method-calls-1"><a class="header" href="#method-calls-1">Method Calls</a></h3>
 <pre><code class="language-grit">p = Point.new(3, 4)
-d = p.distance
+p.scale(2)
 </code></pre>
 <p>Transpiles to:</p>
 <pre><pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>let p = Point::new(3, 4);
-let d = p.distance();
+p.scale(2);
 <span class="boring">}</span></code></pre></pre>
 <ul>
 <li>Static method calls (on class names starting with uppercase) use <code>::</code></li>
-<li>Instance method calls use <code>.</code> and automatically add <code>()</code> if needed</li>
+<li>Instance method calls use <code>.</code> and pass primitive arguments</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="tooling"><a class="header" href="#tooling">Tooling</a></h1>
 <h2 id="building-the-docs"><a class="header" href="#building-the-docs">Building the Docs</a></h2>
